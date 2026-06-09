@@ -1,4 +1,4 @@
-# Siakad Fedo
+# Siakad
 
 Sistem Informasi Akademik (SIAKAD) yang dibangun menggunakan [Next.js](https://nextjs.org), Prisma ORM, dan PostgreSQL.
 
