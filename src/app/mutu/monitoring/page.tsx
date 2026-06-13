@@ -1,98 +1,146 @@
 'use client';
 
-import { useState } from 'react';
-import { Target, Search, Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Filter, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
 import PrintPDFButton from '@/app/components/PrintPDFButton';
+import { getMonitoringCpl } from '@/app/actions/kaprodi';
 
-export default function MonitoringCplPage() {
-  const [angkatan, setAngkatan] = useState('2024');
-  
-  // Dummy data
-  const students = [
-    { nim: 'M0524001', name: 'Andi Saputra', cpl1: 85, cpl2: 78, cpl3: 82, cpl4: 88, status: 'Aman' },
-    { nim: 'M0524002', name: 'Budi Santoso', cpl1: 65, cpl2: 60, cpl3: 70, cpl4: 68, status: 'Peringatan' },
-    { nim: 'M0524003', name: 'Citra Dewi', cpl1: 90, cpl2: 85, cpl3: 88, cpl4: 92, status: 'Aman' },
-  ];
+export default function MutuMonitoringPage() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [students, setStudents] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    setIsLoading(true);
+    try {
+      const data = await getMonitoringCpl();
+      setStudents(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const filteredStudents = students.filter(s => 
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    s.nim.includes(searchTerm)
+  );
+
+  const calculateProdiAverage = (cpl: string) => {
+    if (students.length === 0) return "0";
+    const total = students.reduce((sum, s) => sum + (s.cplScores[cpl] || 0), 0);
+    return (total / students.length).toFixed(1);
+  };
+
+  const getStatusColor = (score: number) => {
+    if (score >= 80) return 'text-green-600 bg-green-50 border-green-200';
+    if (score >= 60) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+    return 'text-red-600 bg-red-50 border-red-200';
+  };
+
+  const cplColumns = new Set<string>();
+  students.forEach(s => Object.keys(s.cplScores).forEach(c => cplColumns.add(c)));
+  const sortedCplColumns = Array.from(cplColumns).sort();
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Monitoring CPL</h1>
-          <p className="text-gray-500">Pantau Capaian Pembelajaran Lulusan (CPL) mahasiswa secara keseluruhan.</p>
+          <h1 className="text-2xl font-bold text-gray-800">Monitoring CPL - Mutu</h1>
+          <p className="text-gray-500">Pantau evaluasi Capaian Pembelajaran Lulusan (CPL) untuk akreditasi dan penjaminan mutu.</p>
         </div>
-        <PrintPDFButton targetId="cpl-monitoring" fileName={`Monitoring_CPL_${angkatan}`} />
+        <div className="flex gap-2 w-full md:w-auto">
+          <PrintPDFButton targetId="cpl-monitoring-mutu" fileName="Monitoring_CPL_Mutu" />
+        </div>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-        <div className="w-1/3">
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Angkatan</label>
-          <select 
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-            value={angkatan}
-            onChange={(e) => setAngkatan(e.target.value)}
-          >
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
-            <option value="2022">2022</option>
-          </select>
+      {sortedCplColumns.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {sortedCplColumns.map((cpl) => {
+            const avg = parseFloat(calculateProdiAverage(cpl));
+            return (
+              <div key={`summary-${cpl}`} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide">{cpl}</p>
+                <div className="mt-2 flex items-baseline">
+                  <span className="text-3xl font-extrabold text-gray-800">{avg}</span>
+                  <span className="ml-1 text-sm text-gray-500">/ 100</span>
+                </div>
+                <div className="mt-3 text-xs flex items-center">
+                  {avg >= 70 ? (
+                    <span className="text-green-600 flex items-center"><ArrowUpRight className="w-3 h-3 mr-1"/> Sesuai Target</span>
+                  ) : (
+                    <span className="text-red-600 flex items-center"><ArrowDownRight className="w-3 h-3 mr-1"/> Perlu Perhatian</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-        
-        <div className="flex-1">
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Cari Mahasiswa</label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400" />
-            </div>
+      )}
+
+      <div id="cpl-monitoring-mutu" className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input 
               type="text" 
-              placeholder="NIM atau Nama..." 
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              placeholder="Cari NIM atau Nama..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             />
           </div>
         </div>
-      </div>
 
-      <div id="cpl-monitoring" className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-blue-600 text-white">
-          <h3 className="text-lg font-bold">Data CPL Angkatan {angkatan}</h3>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">Mahasiswa</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">CPL-1 (Sikap)</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">CPL-2 (Pengetahuan)</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">CPL-3 (KU)</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-200">CPL-4 (KK)</th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {students.map((std, idx) => (
-                <tr key={idx} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                    <div className="text-sm font-bold text-gray-900">{std.nim}</div>
-                    <div className="text-sm text-gray-500">{std.name}</div>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-semibold">{std.cpl1}%</td>
-                  <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-semibold">{std.cpl2}%</td>
-                  <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-semibold">{std.cpl3}%</td>
-                  <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-semibold border-r border-gray-200">{std.cpl4}%</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${
-                      std.status === 'Aman' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {std.status}
-                    </span>
-                  </td>
+        {isLoading ? (
+          <div className="p-12 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-green-600" /></div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">NIM</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Nama Mahasiswa</th>
+                  {sortedCplColumns.map(cpl => (
+                    <th key={`th-${cpl}`} className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">{cpl}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredStudents.map((student) => (
+                  <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{student.nim}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{student.name}</td>
+                    
+                    {sortedCplColumns.map(cpl => {
+                      const score = student.cplScores[cpl] || 0;
+                      return (
+                        <td key={`td-${student.id}-${cpl}`} className="px-6 py-4 whitespace-nowrap text-center">
+                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full border ${getStatusColor(score)}`}>
+                            {score}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+                
+                {filteredStudents.length === 0 && (
+                  <tr>
+                    <td colSpan={2 + sortedCplColumns.length} className="px-6 py-8 text-center text-gray-500">
+                      Tidak ada data mahasiswa ditemukan.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

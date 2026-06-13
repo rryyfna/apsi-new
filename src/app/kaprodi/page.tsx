@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function KaprodiDashboard() {
   return (
     <div>
@@ -12,9 +14,9 @@ export default function KaprodiDashboard() {
           <p className="text-gray-600 mb-4 flex-1">
             Atur dan petakan Capaian Pembelajaran Mata Kuliah (CPMK) untuk seluruh mata kuliah yang ada di prodi Anda.
           </p>
-          <a href="/kaprodi/cpmk" className="inline-block text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+          <Link href="/kaprodi/cpmk" className="inline-block text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
             Kelola CPMK
-          </a>
+          </Link>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
@@ -22,9 +24,9 @@ export default function KaprodiDashboard() {
           <p className="text-gray-600 mb-4 flex-1">
             Pantau Capaian Pembelajaran Lulusan (CPL) dari setiap mahasiswa atau secara agregat untuk melihat efektivitas pembelajaran.
           </p>
-          <a href="/kaprodi/monitoring" className="inline-block text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+          <Link href="/kaprodi/monitoring" className="inline-block text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
             Lihat Monitoring
-          </a>
+          </Link>
         </div>
       </div>
     </div>

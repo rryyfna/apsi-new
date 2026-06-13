@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAllKelas, getKelasWithEnrollmentsAdmin, updateNilaiAdmin } from '@/app/actions/admin-nilai';
-import { Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { getAllKelas, getKelasWithEnrollmentsAdmin } from '@/app/actions/admin-nilai';
+import { AlertCircle } from 'lucide-react';
 import PrintPDFButton from '@/app/components/PrintPDFButton';
 
 export default function InputNilaiPage() {
@@ -10,7 +10,6 @@ export default function InputNilaiPage() {
   const [selectedKelas, setSelectedKelas] = useState<any>(null);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{type: 'error'|'success', text: string} | null>(null);
 
   useEffect(() => {
@@ -47,46 +46,13 @@ export default function InputNilaiPage() {
     }
   }
 
-  const handleInputChange = (id: string, field: string, value: string) => {
-    setEnrollments(prev => prev.map(en => 
-      en.id === id ? { ...en, [field]: value } : en
-    ));
-  };
-
-  async function handleSaveNilai(enrollmentId: string) {
-    setIsSaving(true);
-    setMessage(null);
-    try {
-      const en = enrollments.find(e => e.id === enrollmentId);
-      const res = await updateNilaiAdmin(enrollmentId, {
-        nilaiTugas: en.nilaiTugas,
-        nilaiUts: en.nilaiUts,
-        nilaiUas: en.nilaiUas,
-        nilaiPartisipasi: en.nilaiPartisipasi,
-        nilaiProyek: en.nilaiProyek
-      });
-
-      if (res.error) {
-        setMessage({ type: 'error', text: res.error });
-      } else {
-        setMessage({ type: 'success', text: 'Nilai berhasil disimpan!' });
-        // Reload detail
-        handleSelectKelas(selectedKelas.id);
-      }
-    } catch (e) {
-      setMessage({ type: 'error', text: 'Terjadi kesalahan sistem.' });
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Manajemen Nilai</h1>
+      <h1 className="text-2xl font-bold text-gray-800">Manajemen Nilai (Read-Only)</h1>
 
       {message && (
         <div className={`p-4 rounded-lg flex items-center border ${message.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
-          {message.type === 'error' ? <AlertCircle className="w-5 h-5 mr-3" /> : <CheckCircle className="w-5 h-5 mr-3" />}
+          <AlertCircle className="w-5 h-5 mr-3" />
           {message.text}
         </div>
       )}
@@ -104,7 +70,7 @@ export default function InputNilaiPage() {
         >
           <option value="" disabled>-- Pilih Kelas --</option>
           {kelas.map(k => (
-            <option key={k.id} value={k.id}>{k.kodeMk} - {k.mataKuliah} (Kelas {k.namaKelas})</option>
+            <option key={k.id} value={k.id}>{k.mataKuliah.kodeMk} - {k.mataKuliah.namaMk} (Kelas {k.namaKelas})</option>
           ))}
         </select>
       </div>
@@ -116,7 +82,7 @@ export default function InputNilaiPage() {
         <div id="class-report" className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-blue-600 text-white flex justify-between items-center rounded-t-lg">
             <div>
-              <h3 className="text-lg font-bold">Input Nilai: {selectedKelas.mataKuliah.namaMk} (Kelas {selectedKelas.namaKelas})</h3>
+              <h3 className="text-lg font-bold">Laporan Nilai: {selectedKelas.mataKuliah.namaMk} (Kelas {selectedKelas.namaKelas})</h3>
               <p className="text-blue-100 text-sm">
                 Bobot: Tugas {selectedKelas.bobotTugas ?? 20}%, UTS {selectedKelas.bobotUts ?? 30}%, UAS {selectedKelas.bobotUas ?? 30}%, Partisipasi {selectedKelas.bobotPartisipasi ?? 10}%, Proyek {selectedKelas.bobotProyek ?? 10}%
               </p>
@@ -139,7 +105,6 @@ export default function InputNilaiPage() {
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Proyek</th>
                   <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Akhir</th>
                   <th className="px-4 py-3 text-center text-xs font-bold text-blue-600 uppercase tracking-wider">Huruf</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -147,37 +112,18 @@ export default function InputNilaiPage() {
                   <tr key={en.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{en.mahasiswa.nim}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{en.mahasiswa.name}</td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <input type="number" min="0" max="100" value={en.nilaiTugas || ''} onChange={(e) => handleInputChange(en.id, 'nilaiTugas', e.target.value)} className="w-16 px-2 py-1 border rounded text-center text-sm" />
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <input type="number" min="0" max="100" value={en.nilaiUts || ''} onChange={(e) => handleInputChange(en.id, 'nilaiUts', e.target.value)} className="w-16 px-2 py-1 border rounded text-center text-sm" />
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <input type="number" min="0" max="100" value={en.nilaiUas || ''} onChange={(e) => handleInputChange(en.id, 'nilaiUas', e.target.value)} className="w-16 px-2 py-1 border rounded text-center text-sm" />
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <input type="number" min="0" max="100" value={en.nilaiPartisipasi || ''} onChange={(e) => handleInputChange(en.id, 'nilaiPartisipasi', e.target.value)} className="w-16 px-2 py-1 border rounded text-center text-sm" />
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <input type="number" min="0" max="100" value={en.nilaiProyek || ''} onChange={(e) => handleInputChange(en.id, 'nilaiProyek', e.target.value)} className="w-16 px-2 py-1 border rounded text-center text-sm" />
-                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm">{en.nilaiTugas ?? '-'}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm">{en.nilaiUts ?? '-'}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm">{en.nilaiUas ?? '-'}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm">{en.nilaiPartisipasi ?? '-'}</td>
+                    <td className="px-4 py-4 whitespace-nowrap text-center text-sm">{en.nilaiProyek ?? '-'}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-700">{en.nilaiAkhir ?? '-'}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-center text-sm font-extrabold text-blue-600">{en.huruf ?? '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                      <button
-                        onClick={() => handleSaveNilai(en.id)}
-                        disabled={isSaving}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center disabled:opacity-50"
-                      >
-                        <Save className="w-4 h-4 mr-1" /> Simpan
-                      </button>
-                    </td>
                   </tr>
                 ))}
                 {enrollments.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="px-6 py-8 text-center text-gray-500">Belum ada mahasiswa terdaftar.</td>
+                    <td colSpan={9} className="px-6 py-8 text-center text-gray-500">Belum ada mahasiswa terdaftar.</td>
                   </tr>
                 )}
               </tbody>

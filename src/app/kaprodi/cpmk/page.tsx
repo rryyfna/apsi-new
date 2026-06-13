@@ -1,19 +1,48 @@
 'use client';
 
-import { useState } from 'react';
-import { Save, Plus, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Save, Plus, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { getMataKuliahWithCpmk, saveCpmkSetting } from '@/app/actions/kaprodi';
 
 export default function PengaturanCpmkPage() {
-  const [mataKuliah, setMataKuliah] = useState([
-    { id: '1', kodeMk: 'IF101', namaMk: 'Algoritma dan Pemrograman', sks: 3 },
-    { id: '2', kodeMk: 'IF102', namaMk: 'Struktur Data', sks: 3 },
-  ]);
-  
+  const [mataKuliah, setMataKuliah] = useState<any[]>([]);
   const [selectedMk, setSelectedMk] = useState<string>('');
-  const [cpmks, setCpmks] = useState<{ id: string, kode: string, deskripsi: string }[]>([
-    { id: 'c1', kode: 'CPMK-1', deskripsi: 'Mampu menjelaskan konsep dasar pemrograman.' },
-    { id: 'c2', kode: 'CPMK-2', deskripsi: 'Mampu mengimplementasikan algoritma sorting.' },
-  ]);
+  const [cpmks, setCpmks] = useState<{ id: string, kode: string, deskripsi: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<{type: 'success'|'error', text: string} | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    setIsLoading(true);
+    try {
+      const data = await getMataKuliahWithCpmk();
+      setMataKuliah(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // Effect to populate CPMK when MK changes
+  useEffect(() => {
+    if (selectedMk) {
+      const mk = mataKuliah.find(m => m.id === selectedMk);
+      if (mk && mk.cpmk) {
+        setCpmks(mk.cpmk.map((c: any) => ({
+          id: c.id || Math.random().toString(),
+          kode: c.kode,
+          deskripsi: c.deskripsi
+        })));
+      } else {
+        setCpmks([]);
+      }
+    }
+  }, [selectedMk, mataKuliah]);
 
   const handleAddCpmk = () => {
     setCpmks([...cpmks, { id: Date.now().toString(), kode: `CPMK-${cpmks.length + 1}`, deskripsi: '' }]);
@@ -27,8 +56,23 @@ export default function PengaturanCpmkPage() {
     setCpmks(cpmks.map(c => c.id === id ? { ...c, [field]: value } : c));
   };
 
-  const handleSave = () => {
-    alert('Pengaturan CPMK berhasil disimpan!');
+  const handleSave = async () => {
+    if (!selectedMk) return;
+    setIsSaving(true);
+    setMessage(null);
+    try {
+      const res = await saveCpmkSetting(selectedMk, cpmks);
+      if (res.success) {
+        setMessage({ type: 'success', text: 'Pengaturan CPMK berhasil disimpan!' });
+        await loadData(); // reload
+      } else {
+        setMessage({ type: 'error', text: res.error || 'Terjadi kesalahan' });
+      }
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Gagal menghubungi server' });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -36,18 +80,34 @@ export default function PengaturanCpmkPage() {
       <h1 className="text-2xl font-bold text-gray-800">Pengaturan CPMK</h1>
       <p className="text-gray-500">Atur Capaian Pembelajaran Mata Kuliah (CPMK) untuk masing-masing Mata Kuliah.</p>
 
+      {message && (
+        <div className={`p-4 rounded-lg flex items-center border ${message.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
+          <AlertCircle className="w-5 h-5 mr-3" />
+          {message.text}
+        </div>
+      )}
+
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <label className="block text-sm font-semibold text-gray-700 mb-2">Pilih Mata Kuliah</label>
-        <select 
-          className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-          value={selectedMk}
-          onChange={(e) => setSelectedMk(e.target.value)}
-        >
-          <option value="" disabled>-- Pilih Mata Kuliah --</option>
-          {mataKuliah.map(mk => (
-            <option key={mk.id} value={mk.id}>{mk.kodeMk} - {mk.namaMk}</option>
-          ))}
-        </select>
+        {isLoading ? (
+          <div className="flex items-center text-sm text-gray-500">
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memuat daftar mata kuliah...
+          </div>
+        ) : (
+          <select 
+            className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+            value={selectedMk}
+            onChange={(e) => {
+              setSelectedMk(e.target.value);
+              setMessage(null);
+            }}
+          >
+            <option value="" disabled>-- Pilih Mata Kuliah --</option>
+            {mataKuliah.map(mk => (
+              <option key={mk.id} value={mk.id}>{mk.kodeMk} - {mk.namaMk}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {selectedMk && (
@@ -104,9 +164,11 @@ export default function PengaturanCpmkPage() {
             <div className="pt-4 flex justify-end">
               <button 
                 onClick={handleSave}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold flex items-center shadow-sm transition-colors"
+                disabled={isSaving}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold flex items-center shadow-sm transition-colors disabled:opacity-50"
               >
-                <Save className="w-5 h-5 mr-2" /> Simpan Pengaturan
+                {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
+                {isSaving ? 'Menyimpan...' : 'Simpan Pengaturan'}
               </button>
             </div>
           </div>

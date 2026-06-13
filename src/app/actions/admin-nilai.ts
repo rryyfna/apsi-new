@@ -3,6 +3,7 @@
 import { db } from '@/lib/db';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { Prisma } from '@prisma/client';
 
 async function isAdmin() {
   const headersList = await headers();
@@ -39,7 +40,16 @@ export async function getKelasWithEnrollmentsAdmin(kelasId: string) {
   return kelas;
 }
 
-export async function updateNilaiAdmin(enrollmentId: string, data: any) {
+export async function updateNilaiAdmin(
+  enrollmentId: string, 
+  data: { 
+    nilaiTugas?: string | number | null, 
+    nilaiUts?: string | number | null, 
+    nilaiUas?: string | number | null, 
+    nilaiPartisipasi?: string | number | null, 
+    nilaiProyek?: string | number | null 
+  }
+) {
   if (!(await isAdmin())) return { error: 'Unauthorized' };
 
   const { nilaiTugas, nilaiUts, nilaiUas, nilaiPartisipasi, nilaiProyek } = data;
@@ -59,11 +69,11 @@ export async function updateNilaiAdmin(enrollmentId: string, data: any) {
   const wProyek = (enrollment.kelas.bobotProyek ?? 10) / 100;
 
   let total = 0;
-  if (nilaiTugas) total += (parseFloat(nilaiTugas) * wTugas);
-  if (nilaiUts) total += (parseFloat(nilaiUts) * wUts);
-  if (nilaiUas) total += (parseFloat(nilaiUas) * wUas);
-  if (nilaiPartisipasi) total += (parseFloat(nilaiPartisipasi) * wPartisipasi);
-  if (nilaiProyek) total += (parseFloat(nilaiProyek) * wProyek);
+  const t = parseFloat(String(nilaiTugas)); if (!isNaN(t)) total += (t * wTugas);
+  const uts = parseFloat(String(nilaiUts)); if (!isNaN(uts)) total += (uts * wUts);
+  const uas = parseFloat(String(nilaiUas)); if (!isNaN(uas)) total += (uas * wUas);
+  const p = parseFloat(String(nilaiPartisipasi)); if (!isNaN(p)) total += (p * wPartisipasi);
+  const pr = parseFloat(String(nilaiProyek)); if (!isNaN(pr)) total += (pr * wProyek);
 
   let huruf = 'E';
   let skala4 = 0.0;
@@ -78,13 +88,13 @@ export async function updateNilaiAdmin(enrollmentId: string, data: any) {
   await db.enrollment.update({
     where: { id: enrollmentId },
     data: {
-      nilaiTugas: parseFloat(nilaiTugas) || null,
-      nilaiUts: parseFloat(nilaiUts) || null,
-      nilaiUas: parseFloat(nilaiUas) || null,
-      nilaiPartisipasi: parseFloat(nilaiPartisipasi) || null,
-      nilaiProyek: parseFloat(nilaiProyek) || null,
-      nilaiAkhir: total > 0 ? skala4 : null,
-      huruf: total > 0 ? huruf : null
+      nilaiTugas: !isNaN(parseFloat(String(nilaiTugas))) ? parseFloat(String(nilaiTugas)) : null,
+      nilaiUts: !isNaN(parseFloat(String(nilaiUts))) ? parseFloat(String(nilaiUts)) : null,
+      nilaiUas: !isNaN(parseFloat(String(nilaiUas))) ? parseFloat(String(nilaiUas)) : null,
+      nilaiPartisipasi: !isNaN(parseFloat(String(nilaiPartisipasi))) ? parseFloat(String(nilaiPartisipasi)) : null,
+      nilaiProyek: !isNaN(parseFloat(String(nilaiProyek))) ? parseFloat(String(nilaiProyek)) : null,
+      nilaiAkhir: skala4,
+      huruf: huruf
     }
   });
 

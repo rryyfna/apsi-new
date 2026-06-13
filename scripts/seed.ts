@@ -8,6 +8,27 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Start seeding...');
 
+  // Clean sweep to avoid orphans during repeated seeds
+  console.log('Cleaning up old data...');
+  await prisma.enrollment.deleteMany({});
+  await prisma.kelas.deleteMany({});
+  await prisma.cpmkCplMapping.deleteMany({});
+  await prisma.kolomNilaiCPMK.deleteMany({});
+  await prisma.cPMK.deleteMany({});
+  await prisma.courseCPLMapping.deleteMany({});
+  await prisma.cPL.deleteMany({});
+  await prisma.mataKuliah.deleteMany({});
+  await prisma.dosen.deleteMany({});
+  await prisma.mahasiswa.deleteMany({});
+  await prisma.user.deleteMany({});
+
+  // Seed default CPLs
+  console.log('Seeding CPLs...');
+  const cpl1 = await prisma.cPL.create({ data: { kode: 'CPL-1', deskripsi: 'Sikap dan Tata Nilai' }});
+  const cpl2 = await prisma.cPL.create({ data: { kode: 'CPL-2', deskripsi: 'Penguasaan Pengetahuan' }});
+  const cpl3 = await prisma.cPL.create({ data: { kode: 'CPL-3', deskripsi: 'Keterampilan Umum' }});
+  const cpl4 = await prisma.cPL.create({ data: { kode: 'CPL-4', deskripsi: 'Keterampilan Khusus' }});
+
   // Create Admin
   await prisma.user.upsert({
     where: { username: 'admin' },
@@ -18,6 +39,46 @@ async function main() {
       name: 'Administrator',
       role: Role.ADMIN,
     },
+  });
+
+  // Create Kaprodi
+  const userKaprodi = await prisma.user.upsert({
+    where: { username: 'kaprodi123' },
+    update: {},
+    create: {
+      username: 'kaprodi123',
+      password: 'password123',
+      name: 'Kaprodi Teknik',
+      role: Role.KAPRODI,
+    },
+  });
+  await prisma.kaprodi.upsert({
+    where: { userId: userKaprodi.id },
+    update: {},
+    create: {
+      userId: userKaprodi.id,
+      name: 'Kaprodi Teknik',
+    }
+  });
+
+  // Create Mutu
+  const userMutu = await prisma.user.upsert({
+    where: { username: 'mutu123' },
+    update: {},
+    create: {
+      username: 'mutu123',
+      password: 'password123',
+      name: 'Penjaminan Mutu',
+      role: Role.MUTU,
+    },
+  });
+  await prisma.mutu.upsert({
+    where: { userId: userMutu.id },
+    update: {},
+    create: {
+      userId: userMutu.id,
+      name: 'Penjaminan Mutu',
+    }
   });
 
   const datasetDir = path.join(process.cwd(), 'dataset/APSI 25_5_26');

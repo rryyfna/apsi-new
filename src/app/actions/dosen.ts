@@ -116,11 +116,11 @@ export async function updateNilai(enrollmentId: string, data: any) {
   const wProyek = (enrollment.kelas.bobotProyek ?? 10) / 100;
 
   let total = 0;
-  if (nilaiTugas) total += (parseFloat(nilaiTugas) * wTugas);
-  if (nilaiUts) total += (parseFloat(nilaiUts) * wUts);
-  if (nilaiUas) total += (parseFloat(nilaiUas) * wUas);
-  if (nilaiPartisipasi) total += (parseFloat(nilaiPartisipasi) * wPartisipasi);
-  if (nilaiProyek) total += (parseFloat(nilaiProyek) * wProyek);
+  const t = parseFloat(nilaiTugas); if (!isNaN(t)) total += (t * wTugas);
+  const uts = parseFloat(nilaiUts); if (!isNaN(uts)) total += (uts * wUts);
+  const uas = parseFloat(nilaiUas); if (!isNaN(uas)) total += (uas * wUas);
+  const p = parseFloat(nilaiPartisipasi); if (!isNaN(p)) total += (p * wPartisipasi);
+  const pr = parseFloat(nilaiProyek); if (!isNaN(pr)) total += (pr * wProyek);
 
   let huruf = 'E';
   let skala4 = 0.0;
@@ -135,15 +135,80 @@ export async function updateNilai(enrollmentId: string, data: any) {
   await db.enrollment.update({
     where: { id: enrollmentId },
     data: {
-      nilaiTugas: parseFloat(nilaiTugas) || null,
-      nilaiUts: parseFloat(nilaiUts) || null,
-      nilaiUas: parseFloat(nilaiUas) || null,
-      nilaiPartisipasi: parseFloat(nilaiPartisipasi) || null,
-      nilaiProyek: parseFloat(nilaiProyek) || null,
-      nilaiAkhir: total > 0 ? skala4 : null,
-      huruf: total > 0 ? huruf : null
+      nilaiTugas: !isNaN(parseFloat(nilaiTugas)) ? parseFloat(nilaiTugas) : null,
+      nilaiUts: !isNaN(parseFloat(nilaiUts)) ? parseFloat(nilaiUts) : null,
+      nilaiUas: !isNaN(parseFloat(nilaiUas)) ? parseFloat(nilaiUas) : null,
+      nilaiPartisipasi: !isNaN(parseFloat(nilaiPartisipasi)) ? parseFloat(nilaiPartisipasi) : null,
+      nilaiProyek: !isNaN(parseFloat(nilaiProyek)) ? parseFloat(nilaiProyek) : null,
+      nilaiAkhir: skala4,
+      huruf: huruf
     }
   });
 
   return { success: true };
+}
+
+export async function getPlottingCpmk(kelasId: string) {
+  const userId = await getUserId();
+  if (!userId) redirect('/');
+
+  const kelas = await db.kelas.findUnique({
+    where: { id: kelasId },
+    include: {
+      mataKuliah: {
+        include: {
+          cpmk: {
+            include: {
+              kolomNilai: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!kelas) return null;
+  return kelas.mataKuliah;
+}
+
+export async function savePlottingCpmk(mataKuliahId: string, mapping: Record<string, Record<string, number>>) {
+  const userId = await getUserId();
+  if (!userId) return { error: 'Unauthorized' };
+
+  try {
+    const cpmks = await db.cPMK.findMany({ where: { mataKuliahId } });
+    
+    // Hapus kolomNilai lama untuk mata kuliah ini
+    await db.kolomNilaiCPMK.deleteMany({
+      where: { cpmk: { mataKuliahId } }
+    });
+
+    const newData: { cpmkId: string, namaKolom: string, bobot: number }[] = [];
+    
+    // Mapping format: mapping[colName][cpmkKode] = number
+    for (const colName of Object.keys(mapping)) {
+      for (const cpmkKode of Object.keys(mapping[colName])) {
+        const bobot = mapping[colName][cpmkKode];
+        if (bobot > 0) {
+          const cpmk = cpmks.find(c => c.kode === cpmkKode);
+          if (cpmk) {
+            newData.push({
+              cpmkId: cpmk.id,
+              namaKolom: colName,
+              bobot: bobot
+            });
+          }
+        }
+      }
+    }
+
+    if (newData.length > 0) {
+      await db.kolomNilaiCPMK.createMany({ data: newData });
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    return { error: 'Gagal menyimpan plotting CPMK' };
+  }
 }

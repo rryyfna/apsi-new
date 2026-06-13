@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function MutuDashboard() {
   return (
     <div>
@@ -12,9 +14,9 @@ export default function MutuDashboard() {
           <p className="text-gray-600 mb-4 flex-1">
             Pantau ketercapaian Capaian Pembelajaran Lulusan (CPL) untuk mengevaluasi mutu pendidikan secara menyeluruh.
           </p>
-          <a href="/mutu/monitoring" className="inline-block text-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+          <Link href="/mutu/monitoring" className="inline-block text-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
             Lihat Monitoring
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -81,7 +81,14 @@ Setelah file dataset berada di posisi yang tepat, jalankan perintah seeding beri
 npx ts-node scripts/seed.ts
 ```
 
-*(Catatan: Jika folder dataset tidak diletakkan dengan benar, script tidak akan error namun hanya akan membuatkan akun Admin saja tanpa data tambahan).*
+*(Catatan: Jika folder dataset tidak diletakkan dengan benar, script tidak akan error namun hanya akan membuatkan akun Admin, Kaprodi, dan Mutu saja tanpa data tambahan).*
+
+**Daftar Kredensial Default (Setelah Seeding):**
+- **Admin:** username `admin`, password `password`
+- **Kaprodi:** username `kaprodi123`, password `password123`
+- **Mutu:** username `mutu123`, password `password123`
+- **Dosen:** username `[NIDN Dosen]`, password `password`
+- **Mahasiswa:** username `[NIM Mahasiswa]`, password `password`
 
 ### 7. Jalankan Server Development
 
