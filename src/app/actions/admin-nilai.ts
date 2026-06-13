@@ -4,77 +4,26 @@ import { db } from '@/lib/db';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-async function getUserId() {
+async function isAdmin() {
   const headersList = await headers();
-  return headersList.get('x-user-id');
+  const role = headersList.get('x-user-role');
+  return role === 'ADMIN';
 }
 
-export async function getDosenDashboardData() {
-  const userId = await getUserId();
-  if (!userId) redirect('/');
-
-  const dosen = await db.dosen.findUnique({
-    where: { userId },
+export async function getAllKelas() {
+  if (!(await isAdmin())) redirect('/');
+  const kelas = await db.kelas.findMany({
     include: {
-      kelas: {
-        include: {
-          mataKuliah: true,
-          _count: {
-            select: { enrollments: true }
-          },
-          enrollments: {
-            select: { huruf: true }
-          }
-        }
-      }
+      mataKuliah: true,
+      dosen: true,
+      _count: { select: { enrollments: true } }
     }
   });
-  if (!dosen) redirect('/');
-
-  const totalKelas = dosen.kelas.length;
-  const totalMahasiswaDiajar = dosen.kelas.reduce((acc: number, curr: any) => acc + curr._count.enrollments, 0);
-
-  const gradeCount: Record<string, number> = {};
-  
-  dosen.kelas.forEach((k: any) => {
-    k.enrollments.forEach((en: any) => {
-      if (en.huruf) {
-        gradeCount[en.huruf] = (gradeCount[en.huruf] || 0) + 1;
-      }
-    });
-  });
-
-  const gradeDistribution = Object.keys(gradeCount).map(grade => ({
-    grade,
-    count: gradeCount[grade]
-  })).sort((a, b) => a.grade.localeCompare(b.grade));
-
-  return {
-    profile: {
-      nidn: dosen.nidn,
-      name: dosen.name,
-    },
-    stats: {
-      totalKelas,
-      totalMahasiswaDiajar
-    },
-    gradeDistribution,
-    kelas: dosen.kelas.map((k: any) => ({
-      id: k.id,
-      mataKuliah: k.mataKuliah.namaMk,
-      kodeMk: k.mataKuliah.kodeMk,
-      namaKelas: k.namaKelas,
-      jumlahMahasiswa: k._count.enrollments
-    }))
-  };
+  return kelas;
 }
 
-export async function getKelasWithEnrollments(kelasId: string) {
-  const userId = await getUserId();
-  if (!userId) redirect('/');
-
-  const dosen = await db.dosen.findUnique({ where: { userId } });
-  if (!dosen) redirect('/');
+export async function getKelasWithEnrollmentsAdmin(kelasId: string) {
+  if (!(await isAdmin())) redirect('/');
 
   const kelas = await db.kelas.findUnique({
     where: { id: kelasId },
@@ -87,20 +36,14 @@ export async function getKelasWithEnrollments(kelasId: string) {
       }
     }
   });
-
-  // Pastikan dosen ini yang mengajar
-  if (kelas?.dosenId !== dosen.id) redirect('/');
-
   return kelas;
 }
 
-export async function updateNilai(enrollmentId: string, data: any) {
-  const userId = await getUserId();
-  if (!userId) return { error: 'Unauthorized' };
+export async function updateNilaiAdmin(enrollmentId: string, data: any) {
+  if (!(await isAdmin())) return { error: 'Unauthorized' };
 
-  // Hitung nilai akhir & huruf
   const { nilaiTugas, nilaiUts, nilaiUas, nilaiPartisipasi, nilaiProyek } = data;
-  
+
   // Dapatkan bobot dari Kelas
   const enrollment = await db.enrollment.findUnique({
     where: { id: enrollmentId },

@@ -8,6 +8,7 @@ export default function Home() {
         <div className="container mx-auto px-4 lg:px-8 max-w-7xl flex justify-end h-10 items-center space-x-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
           <Link href="/login/mahasiswa" className="px-3 hover:text-blue-600 hover:bg-gray-100 h-full flex items-center transition-colors">SSO (Mahasiswa)</Link>
           <Link href="/login/dosen" className="px-3 hover:text-blue-600 hover:bg-gray-100 h-full flex items-center transition-colors">Dosen</Link>
+          <Link href="/login/kaprodi" className="px-3 hover:text-blue-600 hover:bg-gray-100 h-full flex items-center transition-colors">Kaprodi</Link>
           <Link href="/login/admin" className="px-3 hover:text-blue-600 hover:bg-gray-100 h-full flex items-center transition-colors">Operator (Non SSO)</Link>
         </div>
       </div>

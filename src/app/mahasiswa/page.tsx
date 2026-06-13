@@ -1,6 +1,8 @@
 import { getMahasiswaDashboardData } from '@/app/actions/mahasiswa';
-import { BookOpen, GraduationCap, TrendingUp, Award, PieChart as PieChartIcon } from 'lucide-react';
+import { BookOpen, GraduationCap, TrendingUp, Award, PieChart as PieChartIcon, Target } from 'lucide-react';
 import GradeDistributionChart from '@/app/components/mahasiswa/GradeDistributionChart';
+
+import CplPieChart from '@/app/components/mahasiswa/CplPieChart';
 
 export default async function MahasiswaDashboard() {
   const data = await getMahasiswaDashboardData();
@@ -68,9 +70,9 @@ export default async function MahasiswaDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Distribusi Nilai (Pie Chart) */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Distribusi Nilai */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <div className="flex items-center mb-4">
             <PieChartIcon className="w-5 h-5 text-gray-500 mr-2" />
             <h3 className="text-lg font-bold text-gray-800">Distribusi Nilai</h3>
@@ -78,11 +80,22 @@ export default async function MahasiswaDashboard() {
           <GradeDistributionChart data={data.gradeDistribution} />
         </div>
 
-        {/* Mata Kuliah Aktif */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden lg:col-span-2">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800">Mata Kuliah Semester Ini</h3>
+        {/* CPL Pie Chart */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex items-center mb-4">
+            <Target className="w-5 h-5 text-gray-500 mr-2" />
+            <h3 className="text-lg font-bold text-gray-800">Capaian CPL (Agregat)</h3>
+          </div>
+          <CplPieChart data={data.cplDistribution} />
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        {/* Mata Kuliah Aktif */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h3 className="text-lg font-bold text-gray-800">Mata Kuliah Semester Ini</h3>
+          </div>
         {data.activeClasses.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">

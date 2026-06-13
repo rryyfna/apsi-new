@@ -17,6 +17,8 @@ export async function middleware(request: NextRequest) {
         if (payload.role === 'MAHASISWA') return NextResponse.redirect(new URL('/mahasiswa', request.url));
         if (payload.role === 'DOSEN') return NextResponse.redirect(new URL('/dosen', request.url));
         if (payload.role === 'ADMIN') return NextResponse.redirect(new URL('/admin', request.url));
+        if (payload.role === 'KAPRODI') return NextResponse.redirect(new URL('/kaprodi', request.url));
+        if (payload.role === 'MUTU') return NextResponse.redirect(new URL('/mutu', request.url));
       } catch (e) {
         // Token tidak valid, biarkan di halaman login
       }
@@ -24,8 +26,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Lindungi rute /mahasiswa, /dosen, /admin
-  if (path.startsWith('/mahasiswa') || path.startsWith('/dosen') || path.startsWith('/admin')) {
+  // Lindungi rute /mahasiswa, /dosen, /admin, /kaprodi, /mutu
+  if (path.startsWith('/mahasiswa') || path.startsWith('/dosen') || path.startsWith('/admin') || path.startsWith('/kaprodi') || path.startsWith('/mutu')) {
     if (!token) {
       return NextResponse.redirect(new URL('/', request.url));
     }
@@ -41,6 +43,12 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url));
       }
       if (path.startsWith('/admin') && payload.role !== 'ADMIN') {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+      if (path.startsWith('/kaprodi') && payload.role !== 'KAPRODI') {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+      if (path.startsWith('/mutu') && payload.role !== 'MUTU') {
         return NextResponse.redirect(new URL('/', request.url));
       }
 
@@ -63,5 +71,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/mahasiswa/:path*', '/dosen/:path*', '/admin/:path*'],
+  matcher: ['/', '/mahasiswa/:path*', '/dosen/:path*', '/admin/:path*', '/kaprodi/:path*', '/mutu/:path*'],
 };

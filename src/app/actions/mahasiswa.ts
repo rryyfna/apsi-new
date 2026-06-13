@@ -73,6 +73,13 @@ export async function getMahasiswaDashboardData() {
 
   const ipk = totalSks > 0 ? (totalBobot / totalSks).toFixed(2) : '0.00';
 
+  const cplDistribution = [
+    { name: 'Sikap', value: 85 },
+    { name: 'Pengetahuan', value: 78 },
+    { name: 'Ket. Umum', value: 82 },
+    { name: 'Ket. Khusus', value: 88 },
+  ];
+
   return {
     profile: {
       nim: mahasiswa.nim,
@@ -85,7 +92,8 @@ export async function getMahasiswaDashboardData() {
       totalSks,
     },
     activeClasses,
-    gradeDistribution
+    gradeDistribution,
+    cplDistribution
   };
 }
 

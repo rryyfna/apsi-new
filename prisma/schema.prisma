@@ -11,6 +11,8 @@ enum Role {
   ADMIN
   MAHASISWA
   DOSEN
+  KAPRODI
+  MUTU
 }
 
 model User {
@@ -23,6 +25,8 @@ model User {
   
   mahasiswa Mahasiswa?
   dosen     Dosen?
+  kaprodi   Kaprodi?
+  mutu      Mutu?
 }
 
 model Mahasiswa {
@@ -57,6 +61,7 @@ model MataKuliah {
   
   kelas         Kelas[]
   cplMappings   CourseCPLMapping[]
+  cpmk          CPMK[]
 }
 
 model Kelas {
@@ -66,6 +71,12 @@ model Kelas {
   namaKelas            String // A, B, C, dsb
   kuotaReguler         Int    @default(0)
   jumlahAmbilReguler   Int    @default(0)
+  
+  bobotTugas           Float? @default(20)
+  bobotUts             Float? @default(30)
+  bobotUas             Float? @default(30)
+  bobotPartisipasi     Float? @default(10)
+  bobotProyek          Float? @default(10)
   
   mataKuliah           MataKuliah @relation(fields: [mataKuliahId], references: [id])
   dosen                Dosen      @relation(fields: [dosenId], references: [id])
@@ -103,6 +114,7 @@ model CPL {
   deskripsi   String
   
   mappings    CourseCPLMapping[]
+  cpmkMappings CpmkCplMapping[]
 }
 
 model CourseCPLMapping {
@@ -146,4 +158,54 @@ model NonTeachingGradeScore {
   component    NonTeachingGradeComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
   
   @@unique([enrollmentId, componentId])
+}
+
+model Kaprodi {
+  id     String @id @default(cuid())
+  userId String @unique
+  name   String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Mutu {
+  id     String @id @default(cuid())
+  userId String @unique
+  name   String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CPMK {
+  id           String @id @default(cuid())
+  kode         String // e.g., CPMK-1
+  deskripsi    String
+  mataKuliahId String
+  
+  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  kolomNilai   KolomNilaiCPMK[]
+  cplMappings  CpmkCplMapping[]
+  
+  @@unique([mataKuliahId, kode])
+}
+
+model KolomNilaiCPMK {
+  id        String @id @default(cuid())
+  cpmkId    String
+  namaKolom String // "TUGAS", "UTS", "UAS", "PARTISIPASI", "PROYEK"
+  bobot     Float  // Percentage, e.g., 40 for 40%
+  
+  cpmk      CPMK   @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
+  
+  @@unique([cpmkId, namaKolom])
+}
+
+model CpmkCplMapping {
+  id      String @id @default(cuid())
+  cpmkId  String
+  cplId   String
+  bobot   Float? // Jika null, bobot merata
+  
+  cpmk    CPMK   @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
+  cpl     CPL    @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  
+  @@unique([cpmkId, cplId])
 }

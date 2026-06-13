@@ -52,6 +52,10 @@ export async function login(formData: FormData) {
     redirectUrl = '/dosen';
   } else if (user.role === 'ADMIN') {
     redirectUrl = '/admin';
+  } else if (user.role === 'KAPRODI') {
+    redirectUrl = '/kaprodi';
+  } else if (user.role === 'MUTU') {
+    redirectUrl = '/mutu';
   }
 
   return { success: true, redirectUrl };

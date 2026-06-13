@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getDosenDashboardData, getKelasWithEnrollments, updateNilai } from '@/app/actions/dosen';
+import { getAllKelas, getKelasWithEnrollmentsAdmin, updateNilaiAdmin } from '@/app/actions/admin-nilai';
 import { Save, AlertCircle, CheckCircle } from 'lucide-react';
 import PrintPDFButton from '@/app/components/PrintPDFButton';
-import ImportExcelButton from '@/app/components/ImportExcelButton';
 
 export default function InputNilaiPage() {
   const [kelas, setKelas] = useState<any[]>([]);
@@ -21,8 +20,8 @@ export default function InputNilaiPage() {
   async function loadDashboard() {
     setIsLoading(true);
     try {
-      const data = await getDosenDashboardData();
-      setKelas(data.kelas);
+      const data = await getAllKelas();
+      setKelas(data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -34,9 +33,13 @@ export default function InputNilaiPage() {
     setIsLoading(true);
     setMessage(null);
     try {
-      const detail = await getKelasWithEnrollments(kelasId);
-      setSelectedKelas(detail);
-      setEnrollments(detail.enrollments);
+      const detail = await getKelasWithEnrollmentsAdmin(kelasId);
+      if (detail) {
+        setSelectedKelas(detail);
+        setEnrollments(detail.enrollments);
+      } else {
+        setMessage({ type: 'error', text: 'Detail kelas tidak ditemukan.' });
+      }
     } catch (e) {
       setMessage({ type: 'error', text: 'Gagal memuat detail kelas.' });
     } finally {
@@ -55,7 +58,7 @@ export default function InputNilaiPage() {
     setMessage(null);
     try {
       const en = enrollments.find(e => e.id === enrollmentId);
-      const res = await updateNilai(enrollmentId, {
+      const res = await updateNilaiAdmin(enrollmentId, {
         nilaiTugas: en.nilaiTugas,
         nilaiUts: en.nilaiUts,
         nilaiUas: en.nilaiUas,
@@ -118,11 +121,7 @@ export default function InputNilaiPage() {
                 Bobot: Tugas {selectedKelas.bobotTugas ?? 20}%, UTS {selectedKelas.bobotUts ?? 30}%, UAS {selectedKelas.bobotUas ?? 30}%, Partisipasi {selectedKelas.bobotPartisipasi ?? 10}%, Proyek {selectedKelas.bobotProyek ?? 10}%
               </p>
             </div>
-            <div className="flex-shrink-0 flex space-x-2">
-               <ImportExcelButton kelasId={selectedKelas.id} onSuccess={() => handleSelectKelas(selectedKelas.id)} />
-               <a href={`/dosen/nilai/cpmk/${selectedKelas.id}`} className="bg-white text-blue-600 px-4 py-2 rounded-md font-semibold text-sm hover:bg-gray-100 transition-colors">
-                 Plotting CPMK
-               </a>
+            <div className="flex-shrink-0">
                <PrintPDFButton targetId="class-report" fileName={`Nilai_${selectedKelas.mataKuliah.kodeMk}_Kls_${selectedKelas.namaKelas}`} />
             </div>
           </div>

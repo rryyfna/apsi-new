@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 export default async function LoginPage({ params }: { params: { role: string } }) {
   const { role } = await params;
   
-  if (!['mahasiswa', 'dosen', 'admin'].includes(role)) {
+  if (!['mahasiswa', 'dosen', 'admin', 'kaprodi', 'mutu'].includes(role)) {
     notFound();
   }
 
@@ -13,12 +13,16 @@ export default async function LoginPage({ params }: { params: { role: string } }
     mahasiswa: 'SSO Mahasiswa',
     dosen: 'Dosen',
     admin: 'Operator (Non SSO)',
+    kaprodi: 'Kaprodi',
+    mutu: 'Gugus Mutu',
   };
 
   const dbRoleMap: Record<string, string> = {
     mahasiswa: 'MAHASISWA',
     dosen: 'DOSEN',
     admin: 'ADMIN',
+    kaprodi: 'KAPRODI',
+    mutu: 'MUTU',
   };
 
   return (
