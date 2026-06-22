@@ -3,9 +3,10 @@
 Sistem Informasi Akademik (SIAKAD) yang dibangun menggunakan [Next.js](https://nextjs.org), Prisma ORM, dan PostgreSQL.
 
 ## Fitur Utama
+- **Keamanan Tingkat Tinggi**: Menggunakan *JWT Stateless* yang dikonfigurasi dengan *Instant Revocation* dan enkripsi *password* standar industri (Bcrypt).
 - **Manajemen Nilai & Bobot**: Dosen dapat mengatur bobot penilaian (Tugas, UTS, UAS, dll.) dan mengimpor nilai secara massal via Excel.
 - **Role-Based Access Control**: Mendukung multi-aktor (Admin, Kaprodi, Mutu, Dosen, Mahasiswa).
-- **Capaian Pembelajaran**: Integrasi evaluasi berbasis CPL dan CPMK.
+- **Capaian Pembelajaran**: Integrasi evaluasi berbasis CPL dan CPMK, didukung dengan *auto-generation template* Excel.
 - **Reporting**: Cetak PDF untuk laporan distribusi nilai dan performa kelas.
 
 ## Prasyarat (Prerequisites)
@@ -106,4 +107,11 @@ npm run dev
 
 Buka [http://localhost:3000](http://localhost:3000) di browser Anda untuk melihat hasilnya.
 
+### 8. Pembuatan Template Excel (Opsional)
 
+Jika file template untuk import CPMK/CPL tidak sengaja terhapus dari folder `public/`, Anda dapat men- *generate* ulang template tersebut menggunakan *script* yang telah disediakan:
+
+```bash
+node scripts/generate-template.js
+```
+*Script* ini akan otomatis mengambil daftar *Mata Kuliah* aktif di database dan merangkainya menjadi file template yang siap diunduh oleh *Kaprodi*.
