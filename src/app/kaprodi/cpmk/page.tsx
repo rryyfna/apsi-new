@@ -139,14 +139,23 @@ export default function PengaturanCpmkPage() {
             ref={fileInputRef}
             onChange={handleUpload}
           />
-          <button 
-            onClick={() => fileInputRef.current?.click()}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <a 
+              href="/Template_Import_CPMK_CPL.xlsx" 
+              download
+              className="flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-200 font-medium transition-colors text-sm"
+            >
+              Unduh Template
+            </a>
+            <button 
+              onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
             className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium transition-colors"
           >
             {isUploading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Upload className="w-5 h-5 mr-2" />}
             {isUploading ? 'Mengimpor...' : 'Import Excel Narasi'}
           </button>
+          </div>
         </div>
       </div>
 

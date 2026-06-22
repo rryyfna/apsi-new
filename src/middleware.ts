@@ -52,6 +52,18 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url));
       }
 
+      // Instant Revocation Check
+      const validateResponse = await fetch(new URL('/api/auth/validate', request.url), {
+        headers: { 'x-user-id': payload.id as string }
+      });
+
+      if (!validateResponse.ok) {
+        // Hapus cookie sesi agar pengguna benar-benar logout
+        const response = NextResponse.redirect(new URL('/', request.url));
+        response.cookies.delete('siakad_session');
+        return response;
+      }
+
       // Clone request headers to append user info
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set('x-user-id', payload.id as string);
