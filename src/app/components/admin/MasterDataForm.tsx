@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { addMahasiswaManual, addDosenManual, addMataKuliahManual } from '@/app/actions/master-data';
 import { UserPlus, BookOpen, UserCircle2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-export default function MasterDataAddPage() {
+export default function MasterDataForm() {
   const [activeTab, setActiveTab] = useState<'MAHASISWA' | 'DOSEN' | 'MK'>('MAHASISWA');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -28,6 +30,7 @@ export default function MasterDataAddPage() {
     if (res?.success) {
       setMessage({ type: 'success', text: 'Data berhasil ditambahkan!' });
       (e.target as HTMLFormElement).reset();
+      router.refresh();
     } else {
       setMessage({ type: 'error', text: res?.error || 'Terjadi kesalahan' });
     }
@@ -37,8 +40,8 @@ export default function MasterDataAddPage() {
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-800">Tambah Data Master (Manual)</h1>
-        <p className="text-gray-600 mt-1">Gunakan fitur ini untuk memasukkan data yang tertinggal atau baru tanpa perlu mengunggah ulang file Excel secara keseluruhan.</p>
+        <h2 className="text-xl font-bold text-gray-800">Tambah Data Master (Manual)</h2>
+        <p className="text-gray-600 mt-1 text-sm">Gunakan fitur ini untuk memasukkan data yang tertinggal atau baru tanpa perlu mengunggah ulang file Excel secara keseluruhan.</p>
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-sm flex items-start">
           <UserCircle2 className="w-5 h-5 mr-2 shrink-0" />
           <p><strong>Informasi Login:</strong> Akun yang ditambahkan manual akan langsung otomatis berstatus <em>Approved</em>. <strong>Password default-nya adalah sama dengan NIM/NIDN pengguna tersebut.</strong></p>
@@ -87,14 +90,6 @@ export default function MasterDataAddPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
                   <input type="text" name="name" required className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-600 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fakultas</label>
-                  <input type="text" name="fakultas" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-600 outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Program Studi</label>
-                  <input type="text" name="programStudi" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-600 outline-none" />
                 </div>
               </>
             )}

@@ -1,41 +1,140 @@
 'use client';
 
-import { useState } from 'react';
-import { Target, AlertCircle, CheckCircle, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Target, Search, Loader2, X, AlertCircle } from 'lucide-react';
 import PrintPDFButton from '@/app/components/PrintPDFButton';
+import { getMonitoringCpl } from '@/app/actions/kaprodi';
+
+interface UnfulfilledCpmk {
+  cpmkKode: string;
+  cpmkNama: string;
+  matkul: string;
+  score: number;
+}
+
+interface StudentData {
+  id: string;
+  nim: string;
+  name: string;
+  cplScores: Record<string, number>;
+  unfulfilledCpmk?: UnfulfilledCpmk[];
+}
 
 export default function CPLMonitoringPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [students, setStudents] = useState<StudentData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedStudent, setSelectedStudent] = useState<StudentData | null>(null);
 
-  // Dummy data representing CPL passed based on UK threshold logic
-  const cplData = [
-    { nim: 'I0323089', nama: 'MUHAMMAD THORIQ ALFARIZI', cpl1: true, cpl2: true, cpl3: false },
-    { nim: 'I0323092', nama: 'NAJWA PERMATA HADI', cpl1: true, cpl2: true, cpl3: true },
-    { nim: 'I0323098', nama: 'NICHOLAS RYAN PRADIPTA', cpl1: true, cpl2: false, cpl3: true },
-    { nim: 'I0323099', nama: 'NISRINA HAMIDAH', cpl1: false, cpl2: true, cpl3: true },
-  ];
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      try {
+        const data = await getMonitoringCpl();
+        setStudents(data as StudentData[]);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
-  const filtered = cplData.filter(d => 
-    d.nim.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    d.nama.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredStudents = students.filter(s => 
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    s.nim.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getStatusColor = (score: number) => {
+    if (score >= 80) return 'text-green-600 bg-green-50 border-green-200';
+    if (score >= 70) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+    if (score >= 60) return 'text-orange-600 bg-orange-50 border-orange-200';
+    return 'text-red-600 bg-red-50 border-red-200';
+  };
+
+  const cplColumns = new Set<string>();
+  students.forEach(s => Object.keys(s.cplScores).forEach(c => cplColumns.add(c)));
+  
+  // Sort numerically
+  const sortedCplColumns = Array.from(cplColumns).sort((a, b) => 
+    a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
   );
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-7xl mx-auto relative">
+      
+      {/* Modal Detail CPMK */}
+      {selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-xl shrink-0">
+              <div>
+                <h3 className="text-xl font-bold text-gray-800">Detail CPMK Belum Terpenuhi</h3>
+                <p className="text-gray-500 text-sm mt-1">{selectedStudent.name} - {selectedStudent.nim}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedStudent(null)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto bg-gray-50 flex-1">
+              {selectedStudent.unfulfilledCpmk && selectedStudent.unfulfilledCpmk.length > 0 ? (
+                <div className="space-y-4">
+                  {selectedStudent.unfulfilledCpmk.map((cpmk, idx) => (
+                    <div key={idx} className="bg-white p-4 rounded-lg border border-red-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <AlertCircle className="w-4 h-4 text-red-500" />
+                          <h4 className="font-bold text-gray-800">{cpmk.cpmkKode}</h4>
+                        </div>
+                        <p className="text-sm text-gray-600 line-clamp-2">{cpmk.cpmkNama}</p>
+                        <div className="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                          Mata Kuliah: {cpmk.matkul}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Skor Saat Ini</p>
+                        <span className="text-xl font-black text-red-600">{cpmk.score}</span>
+                        <span className="text-sm font-medium text-gray-400">/100</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                    <Target className="w-8 h-8 text-green-600" />
+                  </div>
+                  <h4 className="text-lg font-bold text-gray-800 mb-2">Semua CPMK Terpenuhi!</h4>
+                  <p className="text-gray-500 max-w-sm">
+                    Mahasiswa ini tidak memiliki CPMK dengan skor di bawah ambang batas (60). 
+                    Seluruh pencapaiannya sudah memenuhi standar kelulusan.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Monitoring Capaian Pembelajaran Lulusan (CPL)</h1>
-          <p className="text-gray-500 text-sm mt-1">Status CPL berdasarkan ambang batas (threshold) Nilai Unsur Kompetensi (UK)</p>
+          <p className="text-gray-500 text-sm mt-1">Status pencapaian CPL mahasiswa aktif (dalam persen).</p>
         </div>
         <PrintPDFButton targetId="cpl-report" fileName="Laporan_CPL_Mahasiswa" />
       </div>
 
       <div id="cpl-report" className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between rounded-t-lg">
+        <div className="p-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-t-lg">
           <div className="flex items-center text-gray-700 font-semibold">
             <Target className="w-5 h-5 mr-2 text-blue-600" /> Matriks CPL Mahasiswa Aktif
           </div>
-          <div className="relative w-64 print:hidden">
+          <div className="relative w-full sm:w-64 print:hidden">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
             <input 
               type="text" 
@@ -47,41 +146,55 @@ export default function CPLMonitoringPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIM</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Mahasiswa</th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">CPL-1 (Sikap)</th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">CPL-2 (Pengetahuan)</th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">CPL-3 (Keterampilan)</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filtered.map((m) => (
-                <tr key={m.nim} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{m.nim}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{m.nama}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    {m.cpl1 ? <CheckCircle className="w-5 h-5 text-green-500 mx-auto" /> : <AlertCircle className="w-5 h-5 text-red-500 mx-auto" />}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    {m.cpl2 ? <CheckCircle className="w-5 h-5 text-green-500 mx-auto" /> : <AlertCircle className="w-5 h-5 text-red-500 mx-auto" />}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    {m.cpl3 ? <CheckCircle className="w-5 h-5 text-green-500 mx-auto" /> : <AlertCircle className="w-5 h-5 text-red-500 mx-auto" />}
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
+        {isLoading ? (
+          <div className="p-12 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">Tidak ada data ditemukan.</td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIM</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">Nama Mahasiswa</th>
+                  {sortedCplColumns.map(cpl => (
+                    <th key={`th-${cpl}`} className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider whitespace-nowrap">
+                      {cpl}
+                    </th>
+                  ))}
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredStudents.map((m) => (
+                  <tr key={m.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{m.nim}</td>
+                    <td 
+                      className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:text-blue-800 font-semibold cursor-pointer transition-colors"
+                      onClick={() => setSelectedStudent(m)}
+                      title="Klik untuk melihat detail CPMK yang belum terpenuhi"
+                    >
+                      {m.name}
+                    </td>
+                    
+                    {sortedCplColumns.map(cpl => {
+                      const score = m.cplScores[cpl] || 0;
+                      return (
+                        <td key={`td-${m.id}-${cpl}`} className="px-6 py-4 whitespace-nowrap text-center">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full border ${getStatusColor(score)}`}>
+                            {score}%
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+                {filteredStudents.length === 0 && (
+                  <tr>
+                    <td colSpan={2 + sortedCplColumns.length} className="px-6 py-8 text-center text-gray-500">Tidak ada data ditemukan.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

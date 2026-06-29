@@ -15,6 +15,7 @@ export default function PengaturanCpmkPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [importMode, setImportMode] = useState<'single' | 'massal'>('single');
   const [message, setMessage] = useState<{type: 'success'|'error', text: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -105,6 +106,8 @@ export default function PengaturanCpmkPage() {
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('mode', importMode);
+    formData.append('targetMkId', selectedMk);
 
     try {
       const res = await importCpmkCplExcel(formData);
@@ -141,20 +144,20 @@ export default function PengaturanCpmkPage() {
           />
           <div className="flex flex-col sm:flex-row gap-2">
             <a 
-              href="/Template_Import_CPMK_CPL.xlsx" 
+              href={`/api/kaprodi/download-template?type=massal`}
               download
               className="flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-200 font-medium transition-colors text-sm"
             >
-              Unduh Template
+              Unduh Template Massal
             </a>
             <button 
-              onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium transition-colors"
-          >
-            {isUploading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Upload className="w-5 h-5 mr-2" />}
-            {isUploading ? 'Mengimpor...' : 'Import Excel Narasi'}
-          </button>
+              onClick={() => { setImportMode('massal'); fileInputRef.current?.click(); }}
+              disabled={isUploading}
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium transition-colors text-sm"
+            >
+              {isUploading && importMode === 'massal' ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Upload className="w-5 h-5 mr-2" />}
+              Import Excel Massal
+            </button>
           </div>
         </div>
       </div>
@@ -193,12 +196,30 @@ export default function PengaturanCpmkPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
             <h3 className="text-lg font-bold text-gray-800">Daftar CPMK</h3>
-            <button 
-              onClick={handleAddCpmk}
-              className="flex items-center text-sm bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1.5 rounded text-gray-700 font-medium transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-1" /> Tambah CPMK
-            </button>
+            <div className="flex items-center gap-2">
+              <a 
+                href={`/api/kaprodi/download-template?kodeMk=${mataKuliah.find(m => m.id === selectedMk)?.kodeMk || ''}&type=single`}
+                download
+                className="flex items-center justify-center px-3 py-1.5 bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 font-medium transition-colors text-sm"
+              >
+                Unduh Template
+              </a>
+              <button 
+                onClick={() => { setImportMode('single'); fileInputRef.current?.click(); }}
+                disabled={isUploading}
+                className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors text-sm"
+              >
+                {isUploading && importMode === 'single' ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />}
+                Import
+              </button>
+              <div className="w-px h-6 bg-gray-300 mx-1"></div>
+              <button 
+                onClick={handleAddCpmk}
+                className="flex items-center text-sm bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1.5 rounded-md text-gray-700 font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4 mr-1" /> Tambah Manual
+              </button>
+            </div>
           </div>
           
           <div className="p-6 space-y-4">

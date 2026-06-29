@@ -1,5 +1,6 @@
 import { getMasterData } from '@/app/actions/admin';
 import { Database } from 'lucide-react';
+import MasterDataForm from '@/app/components/admin/MasterDataForm';
 
 export default async function MasterDataPage() {
   const data = await getMasterData();
@@ -12,6 +13,8 @@ export default async function MasterDataPage() {
           Master Data
         </h1>
       </div>
+
+      <MasterDataForm />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         

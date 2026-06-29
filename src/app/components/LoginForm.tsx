@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { login } from '@/app/actions/auth';
 
 interface LoginFormProps {
@@ -53,14 +54,14 @@ export default function LoginForm({ targetRole, roleTitle }: LoginFormProps) {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="username">
-            Username
+            Email SSO UNS
           </label>
           <input
             id="username"
             name="username"
-            type="text"
+            type="email"
             className="w-full px-4 py-2 bg-white text-gray-900 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-            placeholder={targetRole === 'MAHASISWA' ? 'NIM' : targetRole === 'DOSEN' ? 'NIDN' : 'NIP / Username'}
+            placeholder={targetRole === 'MAHASISWA' ? 'contoh@student.uns.ac.id' : 'contoh@staff.uns.ac.id'}
             required
           />
         </div>
@@ -84,7 +85,7 @@ export default function LoginForm({ targetRole, roleTitle }: LoginFormProps) {
             <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
             <span className="ml-2 text-sm text-gray-600">Ingat Saya</span>
           </label>
-          <a href="#" className="text-sm text-blue-600 hover:underline">Lupa Password?</a>
+          <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">Lupa Password?</Link>
         </div>
 
         <button
@@ -97,6 +98,16 @@ export default function LoginForm({ targetRole, roleTitle }: LoginFormProps) {
           {isLoading ? 'Memproses...' : 'Masuk'}
         </button>
       </form>
+      
+      <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+        <p className="text-sm text-gray-600 mb-3">Belum memiliki akun atau ingin klaim akun?</p>
+        <Link 
+          href="/register" 
+          className="block w-full py-2.5 px-4 text-blue-600 font-semibold bg-white border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+        >
+          Daftar / Klaim Akun
+        </Link>
+      </div>
     </div>
   );
 }

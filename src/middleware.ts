@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
       if (path.startsWith('/mahasiswa') && payload.role !== 'MAHASISWA') {
         return NextResponse.redirect(new URL('/', request.url));
       }
-      if (path.startsWith('/dosen') && payload.role !== 'DOSEN') {
+      if (path.startsWith('/dosen') && payload.role !== 'DOSEN' && payload.role !== 'KAPRODI') {
         return NextResponse.redirect(new URL('/', request.url));
       }
       if (path.startsWith('/admin') && payload.role !== 'ADMIN') {

@@ -15,6 +15,9 @@ export async function importCpmkCplExcel(formData: FormData) {
   if (!(await isAdminOrKaprodi())) return { error: 'Unauthorized' };
 
   const file = formData.get('file') as File;
+  const mode = formData.get('mode') as string || 'massal';
+  const targetMkId = formData.get('targetMkId') as string || '';
+
   if (!file) {
     return { error: 'File tidak ditemukan' };
   }
@@ -23,58 +26,80 @@ export async function importCpmkCplExcel(formData: FormData) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const workbook = XLSX.read(buffer, { type: 'buffer' });
-
-    // Assuming the Excel has a sheet named 'CPMK' and 'CPL'
-    // Format CPMK: Kode MK, Kode CPMK, Deskripsi (ID), Deskripsi (EN)
-    // Format CPL: Kode CPL, Deskripsi (ID), Deskripsi (EN)
     
     let cpmkCount = 0;
     let skippedCpmk = 0;
     let cplCount = 0;
 
-    const sheetNames = workbook.SheetNames.map(s => s.toUpperCase());
     const cpmkSheetName = workbook.SheetNames.find(s => s.toUpperCase().includes('CPMK'));
     const cplSheetName = workbook.SheetNames.find(s => s.toUpperCase().includes('CPL'));
 
     if (cpmkSheetName) {
       const cpmkSheet = workbook.Sheets[cpmkSheetName];
       const cpmkData: any[] = XLSX.utils.sheet_to_json(cpmkSheet);
+      
+      let singleModeIndex = 1;
+
       for (const row of cpmkData) {
-        // Normalize keys to support case-insensitive headers
         const normalizedRow: any = {};
         for (const key in row) {
           normalizedRow[key.toString().trim().toUpperCase()] = row[key];
         }
 
-        const kodeMk = normalizedRow['KODE MK'] || normalizedRow['KODE_MK'] || normalizedRow['KODE MATA KULIAH'];
-        const kodeCpmk = normalizedRow['KODE CPMK'] || normalizedRow['KODE_CPMK'] || normalizedRow['CPMK'];
-        const deskripsiId = normalizedRow['DESKRIPSI (ID)'] || normalizedRow['DESKRIPSI'];
-        const deskripsiEn = normalizedRow['DESKRIPSI (EN)'] || normalizedRow['DESKRIPSI EN'] || normalizedRow['DESKRIPSI_EN'];
+        if (mode === 'single' && targetMkId) {
+          const deskripsiId = normalizedRow['DESKRIPSI (ID)'] || normalizedRow['DESKRIPSI'];
+          const deskripsiEn = normalizedRow['DESKRIPSI (EN)'] || normalizedRow['DESKRIPSI EN'] || normalizedRow['DESKRIPSI_EN'];
+          const excelKodeCpmk = normalizedRow['KODE CPMK'] || normalizedRow['KODE_CPMK'] || normalizedRow['CPMK'];
 
-        if (kodeMk && kodeCpmk && deskripsiId) {
-          const mk = await db.mataKuliah.findUnique({ where: { kodeMk: kodeMk.toString().trim() } });
-          if (mk) {
+          if (deskripsiId) {
+            const kodeCpmk = excelKodeCpmk ? excelKodeCpmk.toString().trim() : `CPMK-${singleModeIndex}`;
             await db.cPMK.upsert({
               where: {
-                mataKuliahId_kode: {
-                  mataKuliahId: mk.id,
-                  kode: kodeCpmk.toString().trim()
-                }
+                mataKuliahId_kode: { mataKuliahId: targetMkId, kode: kodeCpmk }
               },
               update: {
                 deskripsi: deskripsiId.toString().trim(),
                 deskripsiEn: deskripsiEn ? deskripsiEn.toString().trim() : null
               },
               create: {
-                mataKuliahId: mk.id,
-                kode: kodeCpmk.toString().trim(),
+                mataKuliahId: targetMkId,
+                kode: kodeCpmk,
                 deskripsi: deskripsiId.toString().trim(),
                 deskripsiEn: deskripsiEn ? deskripsiEn.toString().trim() : null
               }
             });
             cpmkCount++;
-          } else {
-            skippedCpmk++;
+            singleModeIndex++;
+          }
+        } else {
+          // Mode Massal
+          const kodeMk = normalizedRow['KODE MK'] || normalizedRow['KODE_MK'] || normalizedRow['KODE MATA KULIAH'];
+          const kodeCpmk = normalizedRow['KODE CPMK'] || normalizedRow['KODE_CPMK'] || normalizedRow['CPMK'];
+          const deskripsiId = normalizedRow['DESKRIPSI (ID)'] || normalizedRow['DESKRIPSI'];
+          const deskripsiEn = normalizedRow['DESKRIPSI (EN)'] || normalizedRow['DESKRIPSI EN'] || normalizedRow['DESKRIPSI_EN'];
+
+          if (kodeMk && kodeCpmk && deskripsiId) {
+            const mk = await db.mataKuliah.findUnique({ where: { kodeMk: kodeMk.toString().trim() } });
+            if (mk) {
+              await db.cPMK.upsert({
+                where: {
+                  mataKuliahId_kode: { mataKuliahId: mk.id, kode: kodeCpmk.toString().trim() }
+                },
+                update: {
+                  deskripsi: deskripsiId.toString().trim(),
+                  deskripsiEn: deskripsiEn ? deskripsiEn.toString().trim() : null
+                },
+                create: {
+                  mataKuliahId: mk.id,
+                  kode: kodeCpmk.toString().trim(),
+                  deskripsi: deskripsiId.toString().trim(),
+                  deskripsiEn: deskripsiEn ? deskripsiEn.toString().trim() : null
+                }
+              });
+              cpmkCount++;
+            } else {
+              skippedCpmk++;
+            }
           }
         }
       }

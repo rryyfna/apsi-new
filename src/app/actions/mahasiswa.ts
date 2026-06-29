@@ -247,3 +247,92 @@ export async function enrollClass(kelasId: string) {
 
   return { success: true };
 }
+
+export async function getStudentCplReport() {
+  const headersList = await headers();
+  const userId = headersList.get('x-user-id');
+  if (!userId) return { error: 'Unauthorized' };
+
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user || user.role !== 'MAHASISWA') return { error: 'Unauthorized' };
+
+  const mahasiswa = await db.mahasiswa.findUnique({
+    where: { userId: user.id }
+  });
+
+  if (!mahasiswa) return { error: 'Data mahasiswa tidak ditemukan' };
+
+  // 1. Get all CPLs
+  const allCpls = await db.cPL.findMany({
+    orderBy: { kode: 'asc' }
+  });
+
+  // 2. Get student enrollments with scores
+  const enrollments = await db.enrollment.findMany({
+    where: { mahasiswaId: mahasiswa.id },
+    include: {
+      kelas: {
+        include: {
+          mataKuliah: {
+            include: {
+              cpmk: {
+                include: {
+                  cplMappings: {
+                    include: { cpl: true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const studentCplScores = new Map<string, { total: number, count: number }>();
+
+  enrollments.forEach(enrollment => {
+    const scores = typeof enrollment.cpmkScores === 'string' 
+      ? JSON.parse(enrollment.cpmkScores || '{}') 
+      : (enrollment.cpmkScores || {});
+
+    const classCplScores = new Map<string, { total: number, count: number }>();
+
+    enrollment.kelas.mataKuliah.cpmk.forEach(cpmk => {
+      const score = Number(scores[cpmk.kode]) || 0;
+      
+      cpmk.cplMappings.forEach((mapping: any) => {
+        const cplKode = mapping.cpl.kode;
+        if (!classCplScores.has(cplKode)) {
+          classCplScores.set(cplKode, { total: 0, count: 0 });
+        }
+        const data = classCplScores.get(cplKode)!;
+        data.total += score;
+        data.count += 1;
+      });
+    });
+
+    for (const [cplKode, data] of classCplScores.entries()) {
+      if (!studentCplScores.has(cplKode)) {
+        studentCplScores.set(cplKode, { total: 0, count: 0 });
+      }
+      const cplScoreForClass = data.total / data.count;
+      const agg = studentCplScores.get(cplKode)!;
+      agg.total += cplScoreForClass;
+      agg.count += 1;
+    }
+  });
+
+  const report = allCpls.map(cpl => {
+    const data = studentCplScores.get(cpl.kode);
+    const score = data && data.count > 0 ? Math.round(data.total / data.count) : 0;
+    return {
+      kode: cpl.kode,
+      nama: cpl.nama,
+      score: score,
+      isPassed: score >= 60 // Threshold 60%
+    };
+  });
+
+  return { success: true, report, mahasiswa };
+}

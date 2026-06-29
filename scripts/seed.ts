@@ -29,54 +29,36 @@ async function main() {
   const cpl4 = await prisma.cPL.create({ data: { kode: 'CPL-4', deskripsi: 'Keterampilan Khusus' }});
 
   // Create Admin
-  await prisma.user.upsert({
-    where: { username: 'admin' },
+  const userAdmin = await prisma.user.upsert({
+    where: { username: 'admin@staff.uns.ac.id' },
     update: {},
     create: {
-      username: 'admin',
-      password: 'password', // in a real app, hash this!
+      username: 'admin@staff.uns.ac.id',
+      password: 'password',
       name: 'Administrator',
       role: Role.ADMIN,
     },
   });
 
-  // Create Kaprodi
-  const userKaprodi = await prisma.user.upsert({
-    where: { username: 'kaprodi123' },
-    update: {},
-    create: {
-      username: 'kaprodi123',
-      password: 'password123',
-      name: 'Kaprodi Teknik',
-      role: Role.KAPRODI,
-    },
-  });
-  await prisma.kaprodi.upsert({
-    where: { userId: userKaprodi.id },
-    update: {},
-    create: {
-      userId: userKaprodi.id,
-      name: 'Kaprodi Teknik',
-    }
-  });
-
   // Create Mutu
   const userMutu = await prisma.user.upsert({
-    where: { username: 'mutu123' },
+    where: { username: 'mutu@staff.uns.ac.id' },
     update: {},
     create: {
-      username: 'mutu123',
+      username: 'mutu@staff.uns.ac.id',
       password: 'password123',
-      name: 'Penjaminan Mutu',
+      name: 'Gugus Mutu',
       role: Role.MUTU,
     },
   });
+
+  // Kaprodi akan di-seed setelah Dosen di-seed untuk mengkoneksikannya dengan Prof Wakhid
   await prisma.mutu.upsert({
     where: { userId: userMutu.id },
     update: {},
     create: {
       userId: userMutu.id,
-      name: 'Penjaminan Mutu',
+      name: 'Gugus Mutu'
     }
   });
 
@@ -281,6 +263,34 @@ async function main() {
         }
       });
     }
+  }
+
+  // Assign Kaprodi ke Prof Wakhid
+  const profWakhid = await prisma.dosen.findFirst({
+    where: { name: { contains: 'Wakhid Ahmad Jauhari', mode: 'insensitive' } },
+    include: { user: true }
+  });
+
+  if (profWakhid) {
+    // Update user record-nya
+    await prisma.user.update({
+      where: { id: profWakhid.userId },
+      data: {
+        username: 'wakhidjauhari@staff.uns.ac.id',
+        role: Role.KAPRODI
+      }
+    });
+
+    // Buat record Kaprodi
+    await prisma.kaprodi.upsert({
+      where: { userId: profWakhid.userId },
+      update: { name: profWakhid.name },
+      create: {
+        userId: profWakhid.userId,
+        name: profWakhid.name
+      }
+    });
+    console.log("Kaprodi assigned to Prof. Wakhid");
   }
   
   console.log('Seeding finished!');
