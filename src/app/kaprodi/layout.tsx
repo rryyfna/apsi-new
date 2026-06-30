@@ -15,6 +15,9 @@ export default async function KaprodiLayout({ children }: { children: React.Reac
   const navItems = [
     { label: 'Beranda', href: '/kaprodi', icon: <Home className="w-5 h-5" /> },
     { label: 'Master Data', href: '/kaprodi/master', icon: <Database className="w-5 h-5" /> },
+    { label: 'Peta Kurikulum', href: '/kaprodi/master/pemetaan', icon: <Map className="w-5 h-5" /> },
+    { label: 'Pengaturan CPMK', href: '/kaprodi/master/cpmk', icon: <Settings className="w-5 h-5" /> },
+    { label: 'Monitoring CPL', href: '/kaprodi/master/cpl', icon: <Target className="w-5 h-5" /> },
   ];
 
   return (
