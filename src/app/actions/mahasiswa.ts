@@ -25,9 +25,13 @@ export async function getMahasiswaDashboardData() {
                 include: {
                   cpmk: {
                     include: {
-                      cplMappings: {
+                      ikMappings: {
                         include: {
-                          cpl: true
+                          ik: {
+                            include: {
+                              cpl: true
+                            }
+                          }
                         }
                       }
                     }
@@ -114,17 +118,34 @@ export async function getMahasiswaDashboardData() {
     });
 
     const classCplScores = new Map<string, { name: string, total: number, count: number }>();
+    const ikScores = new Map<string, number>();
     
     en.kelas.mataKuliah.cpmk.forEach((cpmk: any) => {
       const cpmkScore = cpmkScores.get(cpmk.id) || 0;
-      cpmk.cplMappings.forEach((mapping: any) => {
-        const cplKode = mapping.cpl.kode;
-        if (!classCplScores.has(cplKode)) {
-          classCplScores.set(cplKode, { name: mapping.cpl.kode, total: 0, count: 0 });
+      cpmk.ikMappings.forEach((mapping: any) => {
+        const ikId = mapping.ik.id;
+        const sum = ikScores.get(ikId) || 0;
+        ikScores.set(ikId, sum + (cpmkScore * (mapping.bobot / 100)));
+      });
+    });
+
+    const iksProcessed = new Set<string>();
+    en.kelas.mataKuliah.cpmk.forEach((cpmk: any) => {
+      cpmk.ikMappings.forEach((mapping: any) => {
+        const ik = mapping.ik;
+        if (!iksProcessed.has(ik.id)) {
+          iksProcessed.add(ik.id);
+          const ikScore = ikScores.get(ik.id) || 0;
+          if (ik.cpl) {
+            const cplKode = ik.cpl.kode;
+            if (!classCplScores.has(cplKode)) {
+              classCplScores.set(cplKode, { name: cplKode, total: 0, count: 0 });
+            }
+            const data = classCplScores.get(cplKode)!;
+            data.total += (ikScore * (ik.bobot / 100));
+            data.count += 1;
+          }
         }
-        const data = classCplScores.get(cplKode)!;
-        data.total += cpmkScore;
-        data.count += 1;
       });
     });
 
@@ -292,8 +313,14 @@ export async function getStudentCplReport() {
             include: {
               cpmk: {
                 include: {
-                  cplMappings: {
-                    include: { cpl: true }
+                  ikMappings: {
+                    include: {
+                      ik: {
+                        include: {
+                          cpl: true
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -328,18 +355,35 @@ export async function getStudentCplReport() {
     });
 
     const classCplScores = new Map<string, { total: number, count: number }>();
+    const ikScores = new Map<string, number>();
 
     enrollment.kelas.mataKuliah.cpmk.forEach((cpmk: any) => {
       const score = cpmkScores.get(cpmk.id) || 0;
       
-      cpmk.cplMappings.forEach((mapping: any) => {
-        const cplKode = mapping.cpl.kode;
-        if (!classCplScores.has(cplKode)) {
-          classCplScores.set(cplKode, { total: 0, count: 0 });
+      cpmk.ikMappings.forEach((mapping: any) => {
+        const ikId = mapping.ik.id;
+        const sum = ikScores.get(ikId) || 0;
+        ikScores.set(ikId, sum + (score * (mapping.bobot / 100)));
+      });
+    });
+
+    const iksProcessed = new Set<string>();
+    enrollment.kelas.mataKuliah.cpmk.forEach((cpmk: any) => {
+      cpmk.ikMappings.forEach((mapping: any) => {
+        const ik = mapping.ik;
+        if (!iksProcessed.has(ik.id)) {
+          iksProcessed.add(ik.id);
+          const ikScore = ikScores.get(ik.id) || 0;
+          if (ik.cpl) {
+            const cplKode = ik.cpl.kode;
+            if (!classCplScores.has(cplKode)) {
+              classCplScores.set(cplKode, { total: 0, count: 0 });
+            }
+            const data = classCplScores.get(cplKode)!;
+            data.total += (ikScore * (ik.bobot / 100));
+            data.count += 1;
+          }
         }
-        const data = classCplScores.get(cplKode)!;
-        data.total += score;
-        data.count += 1;
       });
     });
 
