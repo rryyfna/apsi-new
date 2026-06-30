@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { Database, FileSpreadsheet, Settings, Target, Users } from 'lucide-react';
 
-export default function MasterDataPage() {
+export default function KaprodiMasterDataPage() {
   const menus = [
-    { title: 'Pengaturan CPMK', description: 'Kelola Capaian Pembelajaran Mata Kuliah.', href: '/admin/cpmk', icon: <Settings className="w-8 h-8 text-blue-500" /> },
-    { title: 'Peta Kurikulum', description: 'Kelola pemetaan CPMK ke CPL.', href: '/admin/pemetaan', icon: <FileSpreadsheet className="w-8 h-8 text-green-500" /> },
-    { title: 'Monitoring CPL', description: 'Pantau capaian CPL.', href: '/admin/cpl', icon: <Target className="w-8 h-8 text-purple-500" /> },
-    { title: 'Manajemen Kuota', description: 'Atur kapasitas kelas.', href: '/admin/kelas', icon: <Users className="w-8 h-8 text-orange-500" /> },
+    { title: 'Pengaturan CPMK', description: 'Lihat Capaian Pembelajaran Mata Kuliah.', href: '/kaprodi/cpmk', icon: <Settings className="w-8 h-8 text-blue-500" /> },
+    { title: 'Peta Kurikulum', description: 'Lihat pemetaan CPMK ke CPL.', href: '/kaprodi/pemetaan', icon: <FileSpreadsheet className="w-8 h-8 text-green-500" /> },
+    { title: 'Monitoring CPL', description: 'Pantau capaian CPL.', href: '/kaprodi/monitoring', icon: <Target className="w-8 h-8 text-purple-500" /> },
+    { title: 'Lihat Kuota', description: 'Daftar kapasitas kelas.', href: '/kaprodi/kelas', icon: <Users className="w-8 h-8 text-orange-500" /> },
   ];
 
   return (
@@ -14,7 +14,7 @@ export default function MasterDataPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800 flex items-center">
           <Database className="w-6 h-6 mr-3 text-blue-600" />
-          Master Data Akademik
+          Master Data Akademik (Kaprodi)
         </h1>
       </div>
 

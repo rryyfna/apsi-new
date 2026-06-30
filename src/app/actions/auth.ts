@@ -41,11 +41,6 @@ export async function login(formData: FormData) {
     return { error: 'Username atau Password salah!' };
   }
 
-  // Check if account is approved
-  if (!user.isApproved) {
-    return { error: 'Akun Anda sedang menunggu persetujuan (Pending Approval) dari Administrator.' };
-  }
-
   // Fallback check for plaintext passwords from old seeder data
   const isPlaintext = !user.password.startsWith('$2a$') && !user.password.startsWith('$2b$');
   const isValidPassword = isPlaintext 
