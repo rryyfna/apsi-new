@@ -21,23 +21,7 @@ export async function getMahasiswaDashboardData() {
           kelas: {
             include: {
               cpmkKolomNilai: true,
-              mataKuliah: {
-                include: {
-                  cpmk: {
-                    include: {
-                      ikMappings: {
-                        include: {
-                          ik: {
-                            include: {
-                              cpl: true
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
+              mataKuliah: true
             }
           }
         }
@@ -46,6 +30,28 @@ export async function getMahasiswaDashboardData() {
   });
 
   if (!mahasiswa) redirect('/');
+
+  // Optimize: Fetch CPMK and IK mappings separately to prevent Cartesian explosion timeout
+  const mkIds = Array.from(new Set(mahasiswa.enrollments.map(e => e.kelas.mataKuliahId)));
+  const mkDetails = await db.mataKuliah.findMany({
+    where: { id: { in: mkIds } },
+    include: {
+      cpmk: {
+        include: {
+          ikMappings: {
+            include: {
+              ik: {
+                include: {
+                  cpl: true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+  const mkMap = new Map(mkDetails.map(mk => [mk.id, mk]));
 
   let totalSks = 0;
   let totalBobot = 0;
@@ -99,7 +105,10 @@ export async function getMahasiswaDashboardData() {
   for (const en of mahasiswa.enrollments) {
     const cpmkScores = new Map<string, number>();
 
-    en.kelas.mataKuliah.cpmk.forEach((cpmk: any) => {
+    const mkDetail = mkMap.get(en.kelas.mataKuliahId);
+    const classCpmk = mkDetail?.cpmk || [];
+
+    classCpmk.forEach((cpmk: any) => {
       let score = 0;
       const mappings = en.kelas.cpmkKolomNilai.filter((m: any) => m.cpmkId === cpmk.id);
       
@@ -120,7 +129,7 @@ export async function getMahasiswaDashboardData() {
     const classCplScores = new Map<string, { name: string, total: number, count: number }>();
     const ikScores = new Map<string, number>();
     
-    en.kelas.mataKuliah.cpmk.forEach((cpmk: any) => {
+    classCpmk.forEach((cpmk: any) => {
       const cpmkScore = cpmkScores.get(cpmk.id) || 0;
       cpmk.ikMappings.forEach((mapping: any) => {
         const ikId = mapping.ik.id;
@@ -130,7 +139,7 @@ export async function getMahasiswaDashboardData() {
     });
 
     const iksProcessed = new Set<string>();
-    en.kelas.mataKuliah.cpmk.forEach((cpmk: any) => {
+    classCpmk.forEach((cpmk: any) => {
       cpmk.ikMappings.forEach((mapping: any) => {
         const ik = mapping.ik;
         if (!iksProcessed.has(ik.id)) {
@@ -309,19 +318,23 @@ export async function getStudentCplReport() {
       kelas: {
         include: {
           cpmkKolomNilai: true,
-          mataKuliah: {
+          mataKuliah: true
+        }
+      }
+    }
+  });
+
+  const mkIds = Array.from(new Set(enrollments.map(e => e.kelas.mataKuliahId)));
+  const mkDetails = await db.mataKuliah.findMany({
+    where: { id: { in: mkIds } },
+    include: {
+      cpmk: {
+        include: {
+          ikMappings: {
             include: {
-              cpmk: {
+              ik: {
                 include: {
-                  ikMappings: {
-                    include: {
-                      ik: {
-                        include: {
-                          cpl: true
-                        }
-                      }
-                    }
-                  }
+                  cpl: true
                 }
               }
             }
@@ -330,13 +343,17 @@ export async function getStudentCplReport() {
       }
     }
   });
+  const mkMap = new Map(mkDetails.map(mk => [mk.id, mk]));
 
   const studentCplScores = new Map<string, { total: number, count: number }>();
 
   enrollments.forEach(enrollment => {
     const cpmkScores = new Map<string, number>();
 
-    enrollment.kelas.mataKuliah.cpmk.forEach((cpmk: any) => {
+    const mkDetail = mkMap.get(enrollment.kelas.mataKuliahId);
+    const classCpmk = mkDetail?.cpmk || [];
+
+    classCpmk.forEach((cpmk: any) => {
       let score = 0;
       const mappings = enrollment.kelas.cpmkKolomNilai.filter((m: any) => m.cpmkId === cpmk.id);
       
@@ -357,7 +374,7 @@ export async function getStudentCplReport() {
     const classCplScores = new Map<string, { total: number, count: number }>();
     const ikScores = new Map<string, number>();
 
-    enrollment.kelas.mataKuliah.cpmk.forEach((cpmk: any) => {
+    classCpmk.forEach((cpmk: any) => {
       const score = cpmkScores.get(cpmk.id) || 0;
       
       cpmk.ikMappings.forEach((mapping: any) => {
@@ -368,7 +385,7 @@ export async function getStudentCplReport() {
     });
 
     const iksProcessed = new Set<string>();
-    enrollment.kelas.mataKuliah.cpmk.forEach((cpmk: any) => {
+    classCpmk.forEach((cpmk: any) => {
       cpmk.ikMappings.forEach((mapping: any) => {
         const ik = mapping.ik;
         if (!iksProcessed.has(ik.id)) {
