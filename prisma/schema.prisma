@@ -17,33 +17,33 @@ enum Role {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique // Berfungsi sebagai NIM/NIDN/NIP
-  password  String
-  name      String
-  role      Role
-  isApproved Boolean @default(true) // Untuk fitur registrasi mandiri
-  createdAt DateTime @default(now())
-  
-  mahasiswa Mahasiswa?
-  dosen     Dosen?
-  kaprodi   Kaprodi?
-  mutu      Mutu?
+  id         String   @id @default(cuid())
+  username   String   @unique // Berfungsi sebagai NIM/NIDN/NIP
+  password   String
+  name       String
+  role       Role
+  isApproved Boolean  @default(true) // Untuk fitur registrasi mandiri
+  createdAt  DateTime @default(now())
+
+  mahasiswa      Mahasiswa?
+  dosen          Dosen?
+  kaprodi        Kaprodi?
+  mutu           Mutu?
   penjaminanMutu PenjaminanMutu?
 }
 
 model Mahasiswa {
-  id           String @id @default(cuid())
-  userId       String @unique
-  nim          String @unique
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  nim          String  @unique
   name         String
   angkatan     String? // Diekstrak dari NIM misal I0321002 -> 2021
   fakultas     String?
   programStudi String?
-  user         User   @relation(fields: [userId], references: [id])
-  
-  enrollments  Enrollment[]
-  presensi     PresensiRecord[]
+  user         User    @relation(fields: [userId], references: [id])
+
+  enrollments Enrollment[]
+  presensi    PresensiRecord[]
 }
 
 model Dosen {
@@ -52,63 +52,63 @@ model Dosen {
   nidn   String @unique
   name   String
   user   User   @relation(fields: [userId], references: [id])
-  
-  kelas  Kelas[]
+
+  kelas Kelas[]
 }
 
 model MataKuliah {
-  id            String @id @default(cuid())
-  kodeMk        String @unique
+  id            String  @id @default(cuid())
+  kodeMk        String  @unique
   namaMk        String
   sks           Int
   semester      Int?
   isNonTeaching Boolean @default(false)
-  
-  kelas         Kelas[]
-  cplMappings   CourseCPLMapping[]
-  cpmk          CPMK[]
 
-  prasyaratId   String?
-  prasyarat     MataKuliah?  @relation("Prasyarat", fields: [prasyaratId], references: [id])
+  kelas       Kelas[]
+  cplMappings CourseCPLMapping[]
+  cpmk        CPMK[]
+
+  prasyaratId      String?
+  prasyarat        MataKuliah?  @relation("Prasyarat", fields: [prasyaratId], references: [id])
   menjadiPrasyarat MataKuliah[] @relation("Prasyarat")
-  
-  namaMkEn      String?
-  deskripsiEn   String?
-  ikMappings    IkMataKuliahMapping[]
+
+  namaMkEn    String?
+  deskripsiEn String?
+  ikMappings  IkMataKuliahMapping[]
 }
 
 model Kelas {
-  id                   String @id @default(cuid())
-  mataKuliahId         String
-  dosenId              String
-  namaKelas            String // A, B, C, dsb
-  tahunAkademik        String? // Contoh: "2023/2024 Ganjil"
-  kuotaReguler         Int    @default(0)
-  jumlahAmbilReguler   Int    @default(0)
-  
-  bobotTugas           Float? @default(20)
-  bobotUts             Float? @default(30)
-  bobotUas             Float? @default(30)
-  bobotPartisipasi     Float? @default(10)
-  bobotProyek          Float? @default(10)
-  
-  mataKuliah           MataKuliah @relation(fields: [mataKuliahId], references: [id])
-  dosen                Dosen      @relation(fields: [dosenId], references: [id])
-  enrollments          Enrollment[]
-  cpmkKolomNilai       KelasCpmkKolomNilai[]
-  presensi             Presensi[]
+  id                 String  @id @default(cuid())
+  mataKuliahId       String
+  dosenId            String
+  namaKelas          String // A, B, C, dsb
+  tahunAkademik      String? // Contoh: "2023/2024 Ganjil"
+  kuotaReguler       Int     @default(0)
+  jumlahAmbilReguler Int     @default(0)
 
-  updatedAt            DateTime @default(now()) @updatedAt
-  updatedBy            String?
-  
+  bobotTugas       Float? @default(20)
+  bobotUts         Float? @default(30)
+  bobotUas         Float? @default(30)
+  bobotPartisipasi Float? @default(10)
+  bobotProyek      Float? @default(10)
+
+  mataKuliah     MataKuliah            @relation(fields: [mataKuliahId], references: [id])
+  dosen          Dosen                 @relation(fields: [dosenId], references: [id])
+  enrollments    Enrollment[]
+  cpmkKolomNilai KelasCpmkKolomNilai[]
+  presensi       Presensi[]
+
+  updatedAt DateTime @default(now()) @updatedAt
+  updatedBy String?
+
   @@unique([mataKuliahId, namaKelas])
 }
 
 model Enrollment {
-  id               String @id @default(cuid())
-  mahasiswaId      String
-  kelasId          String
-  
+  id          String @id @default(cuid())
+  mahasiswaId String
+  kelasId     String
+
   nilaiTugas       Float?
   nilaiUts         Float?
   nilaiUas         Float?
@@ -118,29 +118,29 @@ model Enrollment {
   nilaiAkhir       Float?
   huruf            String?
 
-  updatedAt        DateTime @default(now()) @updatedAt
-  updatedBy        String?
-  
-  mahasiswa        Mahasiswa @relation(fields: [mahasiswaId], references: [id])
-  kelas            Kelas     @relation(fields: [kelasId], references: [id])
-  
+  updatedAt DateTime @default(now()) @updatedAt
+  updatedBy String?
+
+  mahasiswa Mahasiswa @relation(fields: [mahasiswaId], references: [id])
+  kelas     Kelas     @relation(fields: [kelasId], references: [id])
+
   nonTeachingTemplateId String?
-  nonTeachingTemplate   NonTeachingGradeTemplate? @relation(fields: [nonTeachingTemplateId], references: [id])
+  nonTeachingTemplate   NonTeachingGradeTemplate?  @relation(fields: [nonTeachingTemplateId], references: [id])
   nonTeachingScores     NonTeachingGradeScore[]
   kolomNilaiScores      KelasCpmkKolomNilaiScore[]
-  
+
   @@unique([mahasiswaId, kelasId])
 }
 
 model CPL {
-  id          String @id @default(cuid())
-  kode        String @unique // e.g., CPL-1, CPL-2
+  id          String  @id @default(cuid())
+  kode        String  @unique // e.g., CPL-1, CPL-2
   deskripsi   String
   deskripsiEn String?
-  
-  mappings    CourseCPLMapping[]
+
+  mappings     CourseCPLMapping[]
   cpmkMappings CpmkCplMapping[]
-  ik          IK[]
+  ik           IK[]
 }
 
 model CourseCPLMapping {
@@ -148,30 +148,30 @@ model CourseCPLMapping {
   mataKuliahId String
   cplId        String
   ukName       String // e.g., "UK1", "UK2" -> maps to Tugas, UTS...
-  threshold    Float  // The minimum score to pass this CPL
-  
-  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
-  cpl          CPL        @relation(fields: [cplId], references: [id], onDelete: Cascade)
-  
+  threshold    Float // The minimum score to pass this CPL
+
+  mataKuliah MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  cpl        CPL        @relation(fields: [cplId], references: [id], onDelete: Cascade)
+
   @@unique([mataKuliahId, cplId, ukName])
 }
 
 model NonTeachingGradeTemplate {
-  id           String @id @default(cuid())
-  nama         String // e.g., "Template Skripsi"
-  
-  components   NonTeachingGradeComponent[]
-  enrollments  Enrollment[]
+  id   String @id @default(cuid())
+  nama String // e.g., "Template Skripsi"
+
+  components  NonTeachingGradeComponent[]
+  enrollments Enrollment[]
 }
 
 model NonTeachingGradeComponent {
   id           String @id @default(cuid())
   templateId   String
   namaKriteria String // e.g., "Nilai Pembimbing", "Nilai Penguji"
-  bobot        Float  // Percentage, must sum to 100 per template
-  
-  template     NonTeachingGradeTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  scores       NonTeachingGradeScore[]
+  bobot        Float // Percentage, must sum to 100 per template
+
+  template NonTeachingGradeTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  scores   NonTeachingGradeScore[]
 }
 
 model NonTeachingGradeScore {
@@ -179,10 +179,10 @@ model NonTeachingGradeScore {
   enrollmentId String
   componentId  String
   nilai        Float
-  
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  component    NonTeachingGradeComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
-  
+
+  enrollment Enrollment                @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  component  NonTeachingGradeComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
   @@unique([enrollmentId, componentId])
 }
 
@@ -208,16 +208,17 @@ model PenjaminanMutu {
 }
 
 model CPMK {
-  id           String @id @default(cuid())
+  id           String  @id @default(cuid())
   kode         String // e.g., CPMK-1
   deskripsi    String
   deskripsiEn  String?
   mataKuliahId String
-  
-  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+
+  mataKuliah      MataKuliah            @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
   kelasKolomNilai KelasCpmkKolomNilai[]
-  cplMappings  CpmkCplMapping[]
-  
+  cplMappings     CpmkCplMapping[]
+  ikMappings      CpmkIkMapping[]
+
   @@unique([mataKuliahId, kode])
 }
 
@@ -226,12 +227,12 @@ model KelasCpmkKolomNilai {
   kelasId   String
   cpmkId    String
   namaKolom String // e.g. "Tugas 1", "UTS", "Praktek"
-  bobot     Float  // Percentage, e.g., 40 for 40%
-  
-  kelas     Kelas  @relation(fields: [kelasId], references: [id], onDelete: Cascade)
-  cpmk      CPMK   @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
-  scores    KelasCpmkKolomNilaiScore[]
-  
+  bobot     Float // Percentage, e.g., 40 for 40%
+
+  kelas  Kelas                      @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+  cpmk   CPMK                       @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
+  scores KelasCpmkKolomNilaiScore[]
+
   @@unique([kelasId, namaKolom]) // Nama kolom harus unik per kelas
 }
 
@@ -240,22 +241,22 @@ model KelasCpmkKolomNilaiScore {
   enrollmentId          String
   kelasCpmkKolomNilaiId String
   nilai                 Float
-  
-  enrollment          Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  enrollment          Enrollment          @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   kelasCpmkKolomNilai KelasCpmkKolomNilai @relation(fields: [kelasCpmkKolomNilaiId], references: [id], onDelete: Cascade)
-  
+
   @@unique([enrollmentId, kelasCpmkKolomNilaiId])
 }
 
 model CpmkCplMapping {
-  id      String @id @default(cuid())
-  cpmkId  String
-  cplId   String
-  bobot   Float? // Jika null, bobot merata
-  
-  cpmk    CPMK   @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
-  cpl     CPL    @relation(fields: [cplId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(cuid())
+  cpmkId String
+  cplId  String
+  bobot  Float? // Jika null, bobot merata
+
+  cpmk CPMK @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
+  cpl  CPL  @relation(fields: [cplId], references: [id], onDelete: Cascade)
+
   @@unique([cpmkId, cplId])
 }
 
@@ -271,10 +272,10 @@ model Presensi {
   kelasId     String
   pertemuanKe Int
   tanggal     DateTime
-  
-  kelas       Kelas    @relation(fields: [kelasId], references: [id], onDelete: Cascade)
-  records     PresensiRecord[]
-  
+
+  kelas   Kelas            @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+  records PresensiRecord[]
+
   @@unique([kelasId, pertemuanKe])
 }
 
@@ -283,31 +284,45 @@ model PresensiRecord {
   presensiId  String
   mahasiswaId String
   status      Kehadiran @default(ALPA)
-  
-  presensi    Presensi  @relation(fields: [presensiId], references: [id], onDelete: Cascade)
-  mahasiswa   Mahasiswa @relation(fields: [mahasiswaId], references: [id], onDelete: Cascade)
-  
+
+  presensi  Presensi  @relation(fields: [presensiId], references: [id], onDelete: Cascade)
+  mahasiswa Mahasiswa @relation(fields: [mahasiswaId], references: [id], onDelete: Cascade)
+
   @@unique([presensiId, mahasiswaId])
 }
 
 model IK {
-  id          String @id @default(cuid())
-  kode        String @unique // e.g., IK-1
+  id          String  @id @default(cuid())
+  kode        String  @unique // e.g., IK-1
   deskripsi   String
   deskripsiEn String?
   cplId       String?
-  
-  cpl         CPL?   @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  bobot       Float   @default(0) // Bobot kontribusi IK terhadap CPL
+
+  cpl                CPL?                  @relation(fields: [cplId], references: [id], onDelete: Cascade)
   mataKuliahMappings IkMataKuliahMapping[]
+  cpmkMappings       CpmkIkMapping[]
 }
 
 model IkMataKuliahMapping {
   id           String @id @default(cuid())
   mataKuliahId String
   ikId         String
-  
-  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
-  ik           IK         @relation(fields: [ikId], references: [id], onDelete: Cascade)
-  
+
+  mataKuliah MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  ik         IK         @relation(fields: [ikId], references: [id], onDelete: Cascade)
+
   @@unique([mataKuliahId, ikId])
+}
+
+model CpmkIkMapping {
+  id     String @id @default(cuid())
+  cpmkId String
+  ikId   String
+  bobot  Float // Bobot kontribusi CPMK ini terhadap IK (Persentase)
+
+  cpmk CPMK @relation(fields: [cpmkId], references: [id], onDelete: Cascade)
+  ik   IK   @relation(fields: [ikId], references: [id], onDelete: Cascade)
+
+  @@unique([cpmkId, ikId])
 }

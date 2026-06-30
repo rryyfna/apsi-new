@@ -1,5 +1,5 @@
-import MonitoringCplManager from '@/app/components/master-akademik/MonitoringCplManager';
+import CplManager from '@/app/components/master-akademik/CplManager';
 
 export default function KaprodiCplPage() {
-  return <MonitoringCplManager />;
+  return <CplManager />;
 }
