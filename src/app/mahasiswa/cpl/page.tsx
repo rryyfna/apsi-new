@@ -2,6 +2,9 @@ import { Target, CheckCircle, AlertCircle, XCircle, TrendingUp, BookOpen } from 
 import PrintPDFButton from '@/app/components/PrintPDFButton';
 import { getStudentCplReport } from '@/app/actions/mahasiswa';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function MahasiswaCPLPage() {
   const { success, report, mahasiswa, error } = await getStudentCplReport();
 
