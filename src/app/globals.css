@@ -25,3 +25,5 @@ body {
     print-color-adjust: exact !important;
   }
 }
+
+@keyframes shimmer { 100% { transform: translateX(100%); } }

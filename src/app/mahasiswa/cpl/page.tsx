@@ -1,4 +1,4 @@
-import { Target, CheckCircle, AlertCircle, XCircle, TrendingUp, BookOpen } from 'lucide-react';
+import { Target, CheckCircle, AlertCircle, XCircle, TrendingUp, BookOpen, Award, Zap } from 'lucide-react';
 import PrintPDFButton from '@/app/components/PrintPDFButton';
 import { getStudentCplReport } from '@/app/actions/mahasiswa';
 
@@ -10,9 +10,9 @@ export default async function MahasiswaCPLPage() {
 
   if (!success || !report || !mahasiswa) {
     return (
-      <div className="p-6 text-center text-red-500 bg-red-50 rounded-lg border border-red-100">
-        <AlertCircle className="w-8 h-8 mx-auto mb-2" />
-        <p>{error || 'Gagal memuat data CPL'}</p>
+      <div className="p-6 text-center text-red-500 bg-red-50 rounded-xl border border-red-100 shadow-sm animate-pulse">
+        <AlertCircle className="w-10 h-10 mx-auto mb-3 text-red-400" />
+        <p className="font-medium text-lg">{error || 'Gagal memuat data CPL'}</p>
       </div>
     );
   }
@@ -38,95 +38,149 @@ export default async function MahasiswaCPLPage() {
   const averageScore = report.length > 0 ? Math.round(totalScore / report.length) : 0;
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-10">
-      <div className="flex items-center justify-between bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Hasil Capaian Pembelajaran Lulusan (CPL)</h1>
-          <p className="text-gray-500 text-sm mt-1">Detail pencapaian CPL Anda berdasarkan nilai yang telah diinput</p>
+    <div className="space-y-8 max-w-6xl mx-auto pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      
+      {/* Premium Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-900 to-blue-800 p-8 rounded-2xl shadow-xl border border-indigo-700/50">
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-blue-500/20 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-indigo-500/20 blur-3xl"></div>
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 mb-4">
+              <Award className="w-4 h-4 text-blue-300" />
+              <span className="text-xs font-semibold text-blue-100 uppercase tracking-wider">Capaian Akademik</span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Hasil Capaian Lulusan</h1>
+            <p className="text-blue-200 text-sm md:text-base mt-2 max-w-xl leading-relaxed">
+              Pantau detail kemajuan akademik Anda secara langsung. Matriks ini dihitung secara real-time berdasarkan nilai mata kuliah yang terintegrasi.
+            </p>
+          </div>
+          <div className="shrink-0 bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/20">
+            <PrintPDFButton targetId="cpl-report" fileName={`Laporan_CPL_${mahasiswa.nim}`} />
+          </div>
         </div>
-        <PrintPDFButton targetId="cpl-report" fileName={`Laporan_CPL_${mahasiswa.nim}`} />
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="bg-green-100 p-3 rounded-full">
-            <CheckCircle className="w-6 h-6 text-green-600" />
+      {/* Premium Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="bg-white p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 flex items-center space-x-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 group">
+          <div className="bg-gradient-to-br from-green-400 to-emerald-600 p-4 rounded-xl shadow-lg shadow-green-200 group-hover:scale-110 transition-transform duration-300">
+            <CheckCircle className="w-7 h-7 text-white" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">CPL Tercapai</p>
-            <p className="text-2xl font-bold text-gray-900">{tercapaiCount}/{report.length}</p>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">CPL Tercapai</p>
+            <div className="flex items-baseline space-x-1">
+              <p className="text-3xl font-extrabold text-gray-900">{tercapaiCount}</p>
+              <p className="text-sm font-medium text-gray-400">/ {report.length}</p>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="bg-red-100 p-3 rounded-full">
-            <XCircle className="w-6 h-6 text-red-600" />
+        <div className="bg-white p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 flex items-center space-x-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 group">
+          <div className="bg-gradient-to-br from-red-400 to-rose-600 p-4 rounded-xl shadow-lg shadow-red-200 group-hover:scale-110 transition-transform duration-300">
+            <XCircle className="w-7 h-7 text-white" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Tidak Tercapai</p>
-            <p className="text-2xl font-bold text-gray-900">{tidakTercapaiCount}</p>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Belum Tercapai</p>
+            <p className="text-3xl font-extrabold text-gray-900">{tidakTercapaiCount}</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="bg-blue-100 p-3 rounded-full">
-            <TrendingUp className="w-6 h-6 text-blue-600" />
+        <div className="bg-white p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 flex items-center space-x-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 group">
+          <div className="bg-gradient-to-br from-blue-400 to-indigo-600 p-4 rounded-xl shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform duration-300">
+            <TrendingUp className="w-7 h-7 text-white" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Rata-rata Nilai</p>
-            <p className="text-2xl font-bold text-gray-900">{averageScore > 0 ? averageScore : '-'}</p>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Rata-rata Nilai</p>
+            <div className="flex items-baseline space-x-1">
+              <p className="text-3xl font-extrabold text-gray-900">{averageScore > 0 ? averageScore : '-'}</p>
+              <p className="text-sm font-medium text-gray-400">%</p>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-          <div className="bg-yellow-100 p-3 rounded-full">
-            <Target className="w-6 h-6 text-yellow-600" />
+        <div className="bg-white p-6 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 flex items-center space-x-5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 group">
+          <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-4 rounded-xl shadow-lg shadow-orange-200 group-hover:scale-110 transition-transform duration-300">
+            <Target className="w-7 h-7 text-white" />
           </div>
           <div>
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Target Minimal</p>
-            <p className="text-2xl font-bold text-gray-900">{targetMinimal}</p>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-1">Target Minimal</p>
+            <p className="text-3xl font-extrabold text-gray-900">{targetMinimal}</p>
           </div>
         </div>
       </div>
 
       {/* Progress CPL List */}
-      <div id="cpl-report" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div className="flex items-center mb-6">
-          <BookOpen className="w-5 h-5 text-gray-500 mr-2" />
-          <h2 className="text-lg font-bold text-gray-800">Progress CPL</h2>
+      <div id="cpl-report" className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-2 overflow-hidden">
+        <div className="p-6 border-b border-gray-50 bg-gray-50/50 rounded-t-xl flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="bg-blue-100 p-2 rounded-lg mr-3">
+              <BookOpen className="w-5 h-5 text-blue-700" />
+            </div>
+            <h2 className="text-xl font-extrabold text-gray-800 tracking-tight">Rincian Progress CPL</h2>
+          </div>
+          <div className="hidden sm:flex items-center text-xs font-semibold text-gray-500 uppercase tracking-wider space-x-2">
+            <Zap className="w-4 h-4 text-amber-500" />
+            <span>Real-time Sync</span>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          {report.map((cpl) => {
-            // Sort custom as per screenshot (1, 10, 2, 3...)
+        <div className="divide-y divide-gray-50">
+          {report.map((cpl, index) => {
             const desc = dummyDescriptions[cpl.kode] || cpl.nama;
+            const isPassed = cpl.score >= targetMinimal;
+            const hasData = cpl.score > 0;
+            
+            // Generate a delay for staggered animation
+            const delay = `${index * 50}ms`;
             
             return (
-              <div key={cpl.kode} className="flex flex-col md:flex-row items-start md:items-center py-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors rounded-lg px-2">
-                <div className="bg-blue-50 text-blue-600 font-bold px-3 py-1.5 rounded-md text-xs w-16 text-center shrink-0 mb-3 md:mb-0">
-                  {cpl.kode}
+              <div 
+                key={cpl.kode} 
+                className="group flex flex-col lg:flex-row items-start lg:items-center p-6 hover:bg-blue-50/30 transition-colors duration-300 animate-in fade-in slide-in-from-right-4"
+                style={{ animationDelay: delay, animationFillMode: 'both' }}
+              >
+                {/* Left Section: Badge & Description */}
+                <div className="flex flex-col sm:flex-row items-start lg:items-center flex-grow pr-0 lg:pr-8 w-full">
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 text-gray-700 font-extrabold px-4 py-2 rounded-lg text-sm w-20 text-center shrink-0 mb-4 sm:mb-0 shadow-sm group-hover:border-blue-300 group-hover:text-blue-700 transition-colors">
+                    {cpl.kode}
+                  </div>
+                  
+                  <div className="text-sm text-gray-600 sm:ml-5 leading-relaxed font-medium">
+                    {desc}
+                  </div>
                 </div>
                 
-                <div className="text-sm text-gray-600 md:ml-4 flex-grow pr-4">
-                  {desc}
-                </div>
-                
-                <div className="shrink-0 mt-3 md:mt-0 md:ml-4 flex items-center space-x-2">
-                  <span className="text-gray-400 font-medium">—</span>
-                  {cpl.score === 0 ? (
-                    <span className="bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 py-1 rounded text-xs font-semibold">
-                      Belum Ada Data
-                    </span>
-                  ) : (
-                    <span className={`px-3 py-1 rounded text-xs font-semibold border ${
-                      cpl.score >= targetMinimal 
-                        ? 'bg-green-50 text-green-700 border-green-200' 
-                        : 'bg-red-50 text-red-700 border-red-200'
-                    }`}>
-                      {cpl.score}%
-                    </span>
-                  )}
+                {/* Right Section: Progress Bar & Score */}
+                <div className="shrink-0 w-full lg:w-64 mt-6 lg:mt-0 flex flex-col justify-center border-t lg:border-t-0 border-gray-100 pt-4 lg:pt-0">
+                  <div className="flex justify-between items-end mb-2">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pencapaian</span>
+                    {hasData ? (
+                      <span className={`text-lg font-black ${isPassed ? 'text-green-600' : 'text-red-600'}`}>
+                        {cpl.score}%
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+                        Belum Ada Data
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Progress Bar Container */}
+                  <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden shadow-inner">
+                    {hasData && (
+                      <div 
+                        className={`h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden ${
+                          isPassed ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-red-400 to-rose-500'
+                        }`}
+                        style={{ width: `${cpl.score}%` }}
+                      >
+                        {/* Shimmer effect */}
+                        <div className="absolute top-0 left-0 right-0 bottom-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
