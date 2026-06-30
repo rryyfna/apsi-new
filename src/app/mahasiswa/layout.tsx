@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import Sidebar from '@/app/components/Sidebar';
 import Topbar from '@/app/components/Topbar';
-import { Home, Target } from 'lucide-react';
+import { Home, Target, ClipboardList, FileText } from 'lucide-react';
 import { db } from '@/lib/db';
 
 export default async function MahasiswaLayout({ children }: { children: React.ReactNode }) {
@@ -15,6 +15,8 @@ export default async function MahasiswaLayout({ children }: { children: React.Re
 
   const navItems = [
     { label: 'Beranda', href: '/mahasiswa', icon: <Home className="w-5 h-5" /> },
+    { label: 'KRS', href: '/mahasiswa/krs', icon: <ClipboardList className="w-5 h-5" /> },
+    { label: 'KHS', href: '/mahasiswa/khs', icon: <FileText className="w-5 h-5" /> },
     { label: 'Monitoring CPL', href: '/mahasiswa/cpl', icon: <Target className="w-5 h-5" /> },
   ];
 
