@@ -30,8 +30,6 @@ export async function getMahasiswaDashboardData() {
   });
 
   if (!mahasiswa) {
-    const { cookies } = await import('next/headers');
-    (await cookies()).delete('siakad_session');
     redirect('/login/mahasiswa?error=Profil_Mahasiswa_Tidak_Ditemukan');
   }
 
