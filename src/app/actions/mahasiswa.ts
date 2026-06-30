@@ -71,7 +71,8 @@ export async function getMahasiswaDashboardData() {
       
       gradeCount[enrollment.huruf] = (gradeCount[enrollment.huruf] || 0) + 1;
     } else {
-      // Jika belum ada nilai (active class)
+      // Jika belum ada nilai (active class), tambahkan juga ke totalSks sesuai permintaan user
+      totalSks += sks;
       activeClasses.push({
         kodeMk: enrollment.kelas.mataKuliah.kodeMk,
         namaMk: enrollment.kelas.mataKuliah.namaMk,
@@ -141,7 +142,11 @@ export async function getMahasiswaDashboardData() {
   const cplDistribution = Array.from(studentCplScores.values()).map(data => ({
     name: data.name,
     value: Math.round(data.total / data.count)
-  }));
+  })).sort((a, b) => {
+    const numA = parseInt(a.name.replace('CPL-', '')) || 0;
+    const numB = parseInt(b.name.replace('CPL-', '')) || 0;
+    return numA - numB;
+  });
 
   // Jika belum ada CPL
   if (cplDistribution.length === 0) {
@@ -381,6 +386,10 @@ export async function getStudentCplReport() {
       score: score,
       isPassed: score >= 60 // Threshold 60%
     };
+  }).sort((a, b) => {
+    const numA = parseInt(a.kode.replace('CPL-', '')) || 0;
+    const numB = parseInt(b.kode.replace('CPL-', '')) || 0;
+    return numA - numB;
   });
 
   return { success: true, report, mahasiswa };
