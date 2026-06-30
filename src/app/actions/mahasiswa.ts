@@ -273,6 +273,7 @@ export async function getStudentCplReport() {
     include: {
       kelas: {
         include: {
+          cpmkKolomNilai: true,
           mataKuliah: {
             include: {
               cpmk: {
@@ -292,14 +293,30 @@ export async function getStudentCplReport() {
   const studentCplScores = new Map<string, { total: number, count: number }>();
 
   enrollments.forEach(enrollment => {
-    const scores = typeof (enrollment as any).cpmkScores === 'string' 
-      ? JSON.parse((enrollment as any).cpmkScores || '{}') 
-      : ((enrollment as any).cpmkScores || {});
+    const cpmkScores = new Map<string, number>();
+
+    enrollment.kelas.mataKuliah.cpmk.forEach((cpmk: any) => {
+      let score = 0;
+      const mappings = enrollment.kelas.cpmkKolomNilai.filter((m: any) => m.cpmkId === cpmk.id);
+      
+      mappings.forEach((m: any) => {
+        const percentage = m.bobot / 100;
+        let colScore = 0;
+        if (m.namaKolom.toLowerCase() === 'tugas') colScore = enrollment.nilaiTugas || 0;
+        else if (m.namaKolom.toLowerCase() === 'uts') colScore = enrollment.nilaiUts || 0;
+        else if (m.namaKolom.toLowerCase() === 'uas') colScore = enrollment.nilaiUas || 0;
+        else if (m.namaKolom.toLowerCase() === 'partisipasi') colScore = enrollment.nilaiPartisipasi || 0;
+        else if (m.namaKolom.toLowerCase() === 'proyek') colScore = enrollment.nilaiProyek || 0;
+        
+        score += colScore * percentage;
+      });
+      cpmkScores.set(cpmk.id, score);
+    });
 
     const classCplScores = new Map<string, { total: number, count: number }>();
 
-    enrollment.kelas.mataKuliah.cpmk.forEach(cpmk => {
-      const score = Number(scores[cpmk.kode]) || 0;
+    enrollment.kelas.mataKuliah.cpmk.forEach((cpmk: any) => {
+      const score = cpmkScores.get(cpmk.id) || 0;
       
       cpmk.cplMappings.forEach((mapping: any) => {
         const cplKode = mapping.cpl.kode;
