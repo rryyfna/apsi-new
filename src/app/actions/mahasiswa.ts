@@ -340,9 +340,41 @@ export async function getStudentCplReport() {
     }
   });
 
-  const report = allCpls.map(cpl => {
+  // Helper untuk generate dummy score secara deterministik berdasarkan NIM + CPL
+  const getDeterministicScore = (nim: string, cplIndex: number, min: number, max: number) => {
+    const str = nim + "CPL" + cplIndex;
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    const x = Math.sin(hash++) * 10000;
+    const random = x - Math.floor(x);
+    return Math.floor(random * (max - min + 1)) + min;
+  };
+
+  const report = allCpls.map((cpl, idx) => {
     const data = studentCplScores.get(cpl.kode);
-    const score = data && data.count > 0 ? Math.round(data.total / data.count) : 0;
+    // Real score (disimpan tapi kita override dengan dummy matching kaprodi)
+    let score = data && data.count > 0 ? Math.round(data.total / data.count) : 0;
+    
+    // Inject dummy data matching kaprodi.ts
+    const cplIndex = parseInt(cpl.kode.replace('CPL-', '')) || (idx + 1);
+    
+    if (mahasiswa.nim.startsWith('I0321')) {
+      score = getDeterministicScore(mahasiswa.nim, cplIndex, 90, 99);
+    } else if (mahasiswa.nim.startsWith('I0322')) {
+      score = getDeterministicScore(mahasiswa.nim, cplIndex, 85, 99);
+    } else if (mahasiswa.nim.startsWith('I0323')) {
+      score = getDeterministicScore(mahasiswa.nim, cplIndex, 80, 99);
+    } else if (mahasiswa.nim.startsWith('I0324')) {
+      score = getDeterministicScore(mahasiswa.nim, cplIndex, 60, 84);
+    } else if (mahasiswa.nim.startsWith('I0325')) {
+      score = getDeterministicScore(mahasiswa.nim, cplIndex, 45, 74);
+    } else {
+      score = getDeterministicScore(mahasiswa.nim, cplIndex, 60, 99);
+    }
+
     return {
       kode: cpl.kode,
       nama: cpl.deskripsi,

@@ -178,21 +178,35 @@ export async function getMonitoringCpl(filters?: { angkatan?: string, semester?:
       finalScores[cplKode] = Math.round(data.total / data.count);
     }
 
+    // Helper untuk generate dummy score secara deterministik berdasarkan NIM + CPL (sehingga nilai tidak berubah-ubah setiap refresh)
+    const getDeterministicScore = (nim: string, cplIndex: number, min: number, max: number) => {
+      const str = nim + "CPL" + cplIndex;
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      // Simple pseudo-random using hash
+      const x = Math.sin(hash++) * 10000;
+      const random = x - Math.floor(x);
+      return Math.floor(random * (max - min + 1)) + min;
+    };
+
     // Inject dummy data for UI testing / demo requirements based on angkatan
     for (let i = 1; i <= 10; i++) {
       const cplKey = `CPL-${i}`;
       if (mhs.nim.startsWith('I0321')) {
-        finalScores[cplKey] = Math.floor(Math.random() * 10) + 90; // 90-99 (Hampir lulus semua)
+        finalScores[cplKey] = getDeterministicScore(mhs.nim, i, 90, 99); // 90-99 (Hampir lulus semua)
       } else if (mhs.nim.startsWith('I0322')) {
-        finalScores[cplKey] = Math.floor(Math.random() * 15) + 85; // 85-99 (Semester akhir)
+        finalScores[cplKey] = getDeterministicScore(mhs.nim, i, 85, 99); // 85-99 (Semester akhir)
       } else if (mhs.nim.startsWith('I0323')) {
-        finalScores[cplKey] = Math.floor(Math.random() * 20) + 80; // 80-99 (Sem 7, wajib selesai)
+        finalScores[cplKey] = getDeterministicScore(mhs.nim, i, 80, 99); // 80-99 (Sem 7, wajib selesai)
       } else if (mhs.nim.startsWith('I0324')) {
-        finalScores[cplKey] = Math.floor(Math.random() * 25) + 60; // 60-84 (Sem 5, masih pertengahan)
+        finalScores[cplKey] = getDeterministicScore(mhs.nim, i, 60, 84); // 60-84 (Sem 5, masih pertengahan)
       } else if (mhs.nim.startsWith('I0325')) {
-        finalScores[cplKey] = Math.floor(Math.random() * 30) + 45; // 45-74 (Sem 3, baru mulai, banyak merah)
+        finalScores[cplKey] = getDeterministicScore(mhs.nim, i, 45, 74); // 45-74 (Sem 3, baru mulai, banyak merah)
       } else if (!finalScores[cplKey]) {
-        finalScores[cplKey] = Math.floor(Math.random() * 40) + 60; // Default
+        finalScores[cplKey] = getDeterministicScore(mhs.nim, i, 60, 99); // Default
       }
 
       // Generate dummy cpmkDetails for scores that are not perfectly green (< 80)
