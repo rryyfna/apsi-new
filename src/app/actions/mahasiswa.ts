@@ -29,7 +29,11 @@ export async function getMahasiswaDashboardData() {
     }
   });
 
-  if (!mahasiswa) redirect('/');
+  if (!mahasiswa) {
+    const { cookies } = await import('next/headers');
+    (await cookies()).delete('siakad_session');
+    redirect('/login/mahasiswa?error=Profil_Mahasiswa_Tidak_Ditemukan');
+  }
 
   // Optimize: Fetch CPMK and IK mappings separately to prevent Cartesian explosion timeout
   const mkIds = Array.from(new Set(mahasiswa.enrollments.map(e => e.kelas.mataKuliahId)));

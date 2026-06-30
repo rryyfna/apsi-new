@@ -1,8 +1,16 @@
 import { getMahasiswaDashboardData } from '@/app/actions/mahasiswa';
 import { BookOpen, GraduationCap, TrendingUp, Award, PieChart as PieChartIcon, Target } from 'lucide-react';
-import GradeDistributionChart from '@/app/components/mahasiswa/GradeDistributionChart';
+import dynamic from 'next/dynamic';
 
-import CplPieChart from '@/app/components/mahasiswa/CplPieChart';
+const GradeDistributionChart = dynamic(
+  () => import('@/app/components/mahasiswa/GradeDistributionChart'),
+  { ssr: false, loading: () => <div className="h-64 w-full flex items-center justify-center text-gray-400">Loading chart...</div> }
+);
+
+const CplPieChart = dynamic(
+  () => import('@/app/components/mahasiswa/CplPieChart'),
+  { ssr: false, loading: () => <div className="h-64 w-full flex items-center justify-center text-gray-400">Loading chart...</div> }
+);
 
 export default async function MahasiswaDashboard() {
   const data = await getMahasiswaDashboardData();
