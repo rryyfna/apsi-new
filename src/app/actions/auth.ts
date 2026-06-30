@@ -176,38 +176,36 @@ export async function register(formData: FormData) {
     }
 
     // JIKA AKUN BELUM ADA DI DATABASE SAMA SEKALI
-    await db.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: {
-          username,
-          password: hashedPassword,
-          name,
-          role,
-          isApproved: true // Auto approve
-        }
-      });
-
-      if (role === 'MAHASISWA') {
-        await tx.mahasiswa.create({
-          data: {
-            userId: newUser.id,
-            nim: identifier,
-            name,
-            fakultas: "Teknik",
-            programStudi: "Teknik Industri",
-            angkatan: angkatanStr
-          }
-        });
-      } else if (role === 'DOSEN') {
-        await tx.dosen.create({
-          data: {
-            userId: newUser.id,
-            nidn: identifier,
-            name
-          }
-        });
+    const newUser = await db.user.create({
+      data: {
+        username,
+        password: hashedPassword,
+        name,
+        role,
+        isApproved: true // Auto approve
       }
     });
+
+    if (role === 'MAHASISWA') {
+      await db.mahasiswa.create({
+        data: {
+          userId: newUser.id,
+          nim: identifier,
+          name,
+          fakultas: "Teknik",
+          programStudi: "Teknik Industri",
+          angkatan: angkatanStr
+        }
+      });
+    } else if (role === 'DOSEN') {
+      await db.dosen.create({
+        data: {
+          userId: newUser.id,
+          nidn: identifier,
+          name
+        }
+      });
+    }
 
     return { success: true, message: 'Registrasi berhasil! Anda sekarang dapat masuk menggunakan akun SSO Anda.' };
   } catch (error: any) {
