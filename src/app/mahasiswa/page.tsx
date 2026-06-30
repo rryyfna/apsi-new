@@ -121,7 +121,10 @@ export default async function MahasiswaDashboard() {
           </div>
         ) : (
           <div className="p-8 text-center text-gray-500">
-            <p>Belum ada mata kuliah aktif. Silakan isi KRS.</p>
+            <p>Belum ada mata kuliah aktif.</p>
+            <a href="/mahasiswa/krs" className="inline-block mt-3 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+              Isi KRS Sekarang
+            </a>
           </div>
         )}
         </div>

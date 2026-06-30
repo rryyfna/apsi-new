@@ -188,6 +188,149 @@ export async function getAvailableClasses() {
   return kelas;
 }
 
+export async function getEnrolledClasses() {
+  const userId = await getUserId();
+  if (!userId) return { enrolled: [], mahasiswaName: null, mahasiswaNim: null };
+
+  const mahasiswa = await db.mahasiswa.findUnique({
+    where: { userId },
+    include: {
+      enrollments: {
+        include: {
+          kelas: {
+            include: {
+              mataKuliah: true,
+              dosen: true,
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!mahasiswa) return { enrolled: [], mahasiswaName: null, mahasiswaNim: null };
+
+  const enrolled = mahasiswa.enrollments.map((en) => ({
+    id: en.id,
+    kelasId: en.kelas.id,
+    kodeMk: en.kelas.mataKuliah.kodeMk,
+    namaMk: en.kelas.mataKuliah.namaMk,
+    sks: en.kelas.mataKuliah.sks,
+    namaKelas: en.kelas.namaKelas,
+    dosenName: en.kelas.dosen.name,
+    huruf: en.huruf,
+    tahunAkademik: en.kelas.tahunAkademik,
+  }));
+
+  return {
+    enrolled,
+    mahasiswaName: mahasiswa.name,
+    mahasiswaNim: mahasiswa.nim,
+  };
+}
+
+export async function getStudentKhs() {
+  const userId = await getUserId();
+  if (!userId) return { error: 'Unauthorized' };
+
+  const mahasiswa = await db.mahasiswa.findUnique({
+    where: { userId },
+    include: {
+      enrollments: {
+        include: {
+          kelas: {
+            include: {
+              mataKuliah: true,
+              dosen: true,
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!mahasiswa) return { error: 'Mahasiswa not found' };
+
+  const letterToGrade = (letter: string) => {
+    switch(letter) {
+      case 'A': return 4.0;
+      case 'A-': return 3.7;
+      case 'B+': return 3.3;
+      case 'B': return 3.0;
+      case 'C+': return 2.7;
+      case 'C': return 2.0;
+      case 'D': return 1.0;
+      case 'E': return 0.0;
+      default: return 0.0;
+    }
+  };
+
+  // Group enrollments by tahunAkademik (semester)
+  const semesterMap = new Map<string, {
+    kodeMk: string;
+    namaMk: string;
+    sks: number;
+    namaKelas: string;
+    dosen: string;
+    huruf: string | null;
+    bobot: number;
+  }[]>();
+
+  let totalSks = 0;
+  let totalBobot = 0;
+
+  for (const en of mahasiswa.enrollments) {
+    const semester = en.kelas.tahunAkademik || 'Tidak Diketahui';
+    if (!semesterMap.has(semester)) {
+      semesterMap.set(semester, []);
+    }
+
+    const sks = en.kelas.mataKuliah.sks;
+    const grade = en.huruf ? letterToGrade(en.huruf) : 0;
+
+    if (en.huruf) {
+      totalSks += sks;
+      totalBobot += sks * grade;
+    }
+
+    semesterMap.get(semester)!.push({
+      kodeMk: en.kelas.mataKuliah.kodeMk,
+      namaMk: en.kelas.mataKuliah.namaMk,
+      sks,
+      namaKelas: en.kelas.namaKelas,
+      dosen: en.kelas.dosen.name,
+      huruf: en.huruf,
+      bobot: grade,
+    });
+  }
+
+  const ipk = totalSks > 0 ? (totalBobot / totalSks).toFixed(2) : '0.00';
+
+  // Convert map to sorted array
+  const semesters = Array.from(semesterMap.entries())
+    .map(([name, courses]) => {
+      const semSks = courses.reduce((acc, c) => acc + (c.huruf ? c.sks : 0), 0);
+      const semBobot = courses.reduce((acc, c) => acc + (c.huruf ? c.sks * c.bobot : 0), 0);
+      const ips = semSks > 0 ? (semBobot / semSks).toFixed(2) : '-';
+      return { name, courses, ips, totalSks: semSks };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return {
+    success: true,
+    profile: {
+      name: mahasiswa.name,
+      nim: mahasiswa.nim,
+      fakultas: mahasiswa.fakultas,
+      programStudi: mahasiswa.programStudi,
+    },
+    ipk,
+    totalSks,
+    semesters,
+  };
+}
+
+
 export async function enrollClass(kelasId: string) {
   const userId = await getUserId();
   if (!userId) return { error: 'Unauthorized' };
