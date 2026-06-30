@@ -1,12 +1,13 @@
 import Link from 'next/link';
-import { Database, FileSpreadsheet, Settings, Target, Users } from 'lucide-react';
+import { Database, FileSpreadsheet, Settings, Target, BookOpen, Activity, Map } from 'lucide-react';
 
 export default function KaprodiMasterDataPage() {
   const menus = [
-    { title: 'Pengaturan CPMK', description: 'Lihat Capaian Pembelajaran Mata Kuliah.', href: '/kaprodi/cpmk', icon: <Settings className="w-8 h-8 text-blue-500" /> },
-    { title: 'Peta Kurikulum', description: 'Lihat pemetaan CPMK ke CPL.', href: '/kaprodi/pemetaan', icon: <FileSpreadsheet className="w-8 h-8 text-green-500" /> },
-    { title: 'Monitoring CPL', description: 'Pantau capaian CPL.', href: '/kaprodi/monitoring', icon: <Target className="w-8 h-8 text-purple-500" /> },
-    { title: 'Lihat Kuota', description: 'Daftar kapasitas kelas.', href: '/kaprodi/kelas', icon: <Users className="w-8 h-8 text-orange-500" /> },
+    { title: 'Mata Kuliah', description: 'Kelola data Mata Kuliah.', href: '/kaprodi/master/mata-kuliah', icon: <BookOpen className="w-8 h-8 text-blue-500" /> },
+    { title: 'CPL', description: 'Kelola Capaian Pembelajaran Lulusan.', href: '/kaprodi/master/cpl', icon: <Target className="w-8 h-8 text-green-500" /> },
+    { title: 'CPMK', description: 'Kelola Capaian Pembelajaran Mata Kuliah.', href: '/kaprodi/master/cpmk', icon: <Settings className="w-8 h-8 text-purple-500" /> },
+    { title: 'IK (Indikator Kinerja)', description: 'Kelola Indikator Kinerja.', href: '/kaprodi/master/ik', icon: <Activity className="w-8 h-8 text-orange-500" /> },
+    { title: 'Pemetaan', description: 'Pemetaan Mata Kuliah ke CPL, CPMK, dan IK.', href: '/kaprodi/master/pemetaan', icon: <Map className="w-8 h-8 text-teal-500" /> },
   ];
 
   return (
