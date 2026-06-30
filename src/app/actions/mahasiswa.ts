@@ -23,7 +23,8 @@ export async function getMahasiswaDashboardData() {
               cpmkKolomNilai: true,
               mataKuliah: true
             }
-          }
+          },
+          kolomNilaiScores: true
         }
       }
     }
