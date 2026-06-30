@@ -97,6 +97,13 @@ export default function InputNilaiPage() {
       }
       return newEn;
     });
+    // Ensure it's always sorted by NIM
+    mapped.sort((a, b) => {
+      if (a.mahasiswa?.nim && b.mahasiswa?.nim) {
+        return a.mahasiswa.nim.localeCompare(b.mahasiswa.nim);
+      }
+      return 0;
+    });
     setEnrollments(mapped);
   };
 

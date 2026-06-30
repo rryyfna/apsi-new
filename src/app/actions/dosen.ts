@@ -109,6 +109,11 @@ export async function getKelasWithEnrollments(kelasId: string) {
         include: { cpmk: true }
       },
       enrollments: {
+        orderBy: {
+          mahasiswa: {
+            nim: 'asc'
+          }
+        },
         include: {
           mahasiswa: true,
           kolomNilaiScores: true
