@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
 
       // Lanjutkan request, dan pass user id ke header agar bisa dibaca di layout/page
       const requestHeaders = new Headers(request.headers);
-      requestHeaders.set('x-user-id', payload.userId as string);
+      requestHeaders.set('x-user-id', payload.id as string);
       requestHeaders.set('x-user-role', payload.role as string);
 
       return NextResponse.next({
