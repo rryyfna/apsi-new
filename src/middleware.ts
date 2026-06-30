@@ -19,6 +19,7 @@ export async function middleware(request: NextRequest) {
         if (payload.role === 'ADMIN') return NextResponse.redirect(new URL('/admin', request.url));
         if (payload.role === 'KAPRODI') return NextResponse.redirect(new URL('/kaprodi', request.url));
         if (payload.role === 'MUTU') return NextResponse.redirect(new URL('/mutu', request.url));
+        if (payload.role === 'PENJAMINAN_MUTU') return NextResponse.redirect(new URL('/penjaminan-mutu', request.url));
       } catch {
         // Token tidak valid, biarkan di halaman login
       }
@@ -26,8 +27,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Lindungi rute /mahasiswa, /dosen, /admin, /kaprodi, /mutu
-  if (path.startsWith('/mahasiswa') || path.startsWith('/dosen') || path.startsWith('/admin') || path.startsWith('/kaprodi') || path.startsWith('/mutu')) {
+  // Lindungi rute /mahasiswa, /dosen, /admin, /kaprodi, /mutu, /penjaminan-mutu
+  if (path.startsWith('/mahasiswa') || path.startsWith('/dosen') || path.startsWith('/admin') || path.startsWith('/kaprodi') || path.startsWith('/mutu') || path.startsWith('/penjaminan-mutu')) {
+    
     if (!token) {
       return NextResponse.redirect(new URL('/', request.url));
     }
@@ -49,6 +51,9 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url));
       }
       if (path.startsWith('/mutu') && payload.role !== 'MUTU') {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+      if (path.startsWith('/penjaminan-mutu') && payload.role !== 'PENJAMINAN_MUTU') {
         return NextResponse.redirect(new URL('/', request.url));
       }
 
@@ -83,5 +88,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/mahasiswa/:path*', '/dosen/:path*', '/admin/:path*', '/kaprodi/:path*', '/mutu/:path*'],
+  matcher: ['/', '/mahasiswa/:path*', '/dosen/:path*', '/admin/:path*', '/kaprodi/:path*', '/mutu/:path*', '/penjaminan-mutu/:path*'],
 };

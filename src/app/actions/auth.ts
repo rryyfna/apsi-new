@@ -18,7 +18,8 @@ export async function getSessionUser() {
       mahasiswa: true,
       dosen: true,
       kaprodi: true,
-      mutu: true
+      mutu: true,
+      penjaminanMutu: true
     }
   });
 }
@@ -95,6 +96,8 @@ export async function login(formData: FormData) {
     redirectUrl = '/kaprodi';
   } else if (user.role === 'MUTU') {
     redirectUrl = '/mutu';
+  } else if (user.role === 'PENJAMINAN_MUTU') {
+    redirectUrl = '/penjaminan-mutu';
   }
 
   return { success: true, redirectUrl };

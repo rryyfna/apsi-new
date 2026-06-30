@@ -13,6 +13,7 @@ enum Role {
   DOSEN
   KAPRODI
   MUTU
+  PENJAMINAN_MUTU
 }
 
 model User {
@@ -28,6 +29,7 @@ model User {
   dosen     Dosen?
   kaprodi   Kaprodi?
   mutu      Mutu?
+  penjaminanMutu PenjaminanMutu?
 }
 
 model Mahasiswa {
@@ -72,6 +74,7 @@ model MataKuliah {
   
   namaMkEn      String?
   deskripsiEn   String?
+  ikMappings    IkMataKuliahMapping[]
 }
 
 model Kelas {
@@ -137,6 +140,7 @@ model CPL {
   
   mappings    CourseCPLMapping[]
   cpmkMappings CpmkCplMapping[]
+  ik          IK[]
 }
 
 model CourseCPLMapping {
@@ -190,6 +194,13 @@ model Kaprodi {
 }
 
 model Mutu {
+  id     String @id @default(cuid())
+  userId String @unique
+  name   String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PenjaminanMutu {
   id     String @id @default(cuid())
   userId String @unique
   name   String
@@ -277,4 +288,26 @@ model PresensiRecord {
   mahasiswa   Mahasiswa @relation(fields: [mahasiswaId], references: [id], onDelete: Cascade)
   
   @@unique([presensiId, mahasiswaId])
+}
+
+model IK {
+  id          String @id @default(cuid())
+  kode        String @unique // e.g., IK-1
+  deskripsi   String
+  deskripsiEn String?
+  cplId       String?
+  
+  cpl         CPL?   @relation(fields: [cplId], references: [id], onDelete: Cascade)
+  mataKuliahMappings IkMataKuliahMapping[]
+}
+
+model IkMataKuliahMapping {
+  id           String @id @default(cuid())
+  mataKuliahId String
+  ikId         String
+  
+  mataKuliah   MataKuliah @relation(fields: [mataKuliahId], references: [id], onDelete: Cascade)
+  ik           IK         @relation(fields: [ikId], references: [id], onDelete: Cascade)
+  
+  @@unique([mataKuliahId, ikId])
 }
