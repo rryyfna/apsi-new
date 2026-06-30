@@ -80,19 +80,24 @@ export async function getMonitoringCpl(filters?: { angkatan?: string, semester?:
       kelas: {
         include: {
           cpmkKolomNilai: true,
-          mataKuliah: {
+          mataKuliah: true
+        }
+      }
+    }
+  });
+
+  // Optimize: Fetch CPMK and IK mappings separately to prevent Cartesian explosion timeout on Vercel
+  const mkIds = Array.from(new Set(enrollments.map(e => e.kelas.mataKuliahId)));
+  const mkDetails = await db.mataKuliah.findMany({
+    where: { id: { in: mkIds } },
+    include: {
+      cpmk: {
+        include: {
+          ikMappings: {
             include: {
-              cpmk: {
+              ik: {
                 include: {
-                  ikMappings: {
-                    include: {
-                      ik: {
-                        include: {
-                          cpl: true
-                        }
-                      }
-                    }
-                  }
+                  cpl: true
                 }
               }
             }
@@ -101,6 +106,8 @@ export async function getMonitoringCpl(filters?: { angkatan?: string, semester?:
       }
     }
   });
+
+  const mkMap = new Map(mkDetails.map(mk => [mk.id, mk]));
 
   const studentMap = new Map<string, any>();
 
@@ -121,7 +128,10 @@ export async function getMonitoringCpl(filters?: { angkatan?: string, semester?:
     // Hitung skor masing-masing CPMK berdasarkan plotting kelas
     const cpmkScores = new Map<string, number>();
 
-    en.kelas.mataKuliah.cpmk.forEach(cpmk => {
+    const mkDetail = mkMap.get(en.kelas.mataKuliahId);
+    const classCpmk = mkDetail?.cpmk || [];
+
+    classCpmk.forEach(cpmk => {
       let score = 0;
       const mappings = en.kelas.cpmkKolomNilai.filter(m => m.cpmkId === cpmk.id);
       
@@ -150,7 +160,7 @@ export async function getMonitoringCpl(filters?: { angkatan?: string, semester?:
     // Petakan skor CPMK ke IK, lalu IK ke CPL
     // Karena kita menggunakan Weighted Sum, kita jumlahkan kontribusi per CPMK untuk IK di kelas ini
     const ikScores = new Map<string, number>();
-    en.kelas.mataKuliah.cpmk.forEach(cpmk => {
+    classCpmk.forEach(cpmk => {
       const cpmkScore = cpmkScores.get(cpmk.id) || 0;
       cpmk.ikMappings.forEach(mapping => {
         const ikId = mapping.ik.id;
@@ -163,7 +173,7 @@ export async function getMonitoringCpl(filters?: { angkatan?: string, semester?:
     const classCplScores = new Map<string, number>();
     const iksProcessed = new Set<string>(); // avoid duplicate IK processing per class
 
-    en.kelas.mataKuliah.cpmk.forEach(cpmk => {
+    classCpmk.forEach(cpmk => {
       cpmk.ikMappings.forEach(mapping => {
         const ik = mapping.ik;
         if (!iksProcessed.has(ik.id)) {
