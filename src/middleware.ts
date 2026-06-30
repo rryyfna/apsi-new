@@ -29,7 +29,6 @@ export async function middleware(request: NextRequest) {
 
   // Lindungi rute /mahasiswa, /dosen, /admin, /kaprodi, /mutu, /penjaminan-mutu
   if (path.startsWith('/mahasiswa') || path.startsWith('/dosen') || path.startsWith('/admin') || path.startsWith('/kaprodi') || path.startsWith('/mutu') || path.startsWith('/penjaminan-mutu')) {
-    
     if (!token) {
       return NextResponse.redirect(new URL('/', request.url));
     }
@@ -38,49 +37,28 @@ export async function middleware(request: NextRequest) {
       const { payload } = await jwtVerify(token, JWT_SECRET);
       
       // Validasi Role
-      if (path.startsWith('/mahasiswa') && payload.role !== 'MAHASISWA') {
-        return NextResponse.redirect(new URL('/', request.url));
-      }
-      if (path.startsWith('/dosen') && payload.role !== 'DOSEN' && payload.role !== 'KAPRODI') {
-        return NextResponse.redirect(new URL('/', request.url));
-      }
-      if (path.startsWith('/admin') && payload.role !== 'ADMIN') {
-        return NextResponse.redirect(new URL('/', request.url));
-      }
-      if (path.startsWith('/kaprodi') && payload.role !== 'KAPRODI') {
-        return NextResponse.redirect(new URL('/', request.url));
-      }
-      if (path.startsWith('/mutu') && payload.role !== 'MUTU') {
-        return NextResponse.redirect(new URL('/', request.url));
-      }
-      if (path.startsWith('/penjaminan-mutu') && payload.role !== 'PENJAMINAN_MUTU') {
-        return NextResponse.redirect(new URL('/', request.url));
-      }
+      if (path.startsWith('/mahasiswa') && payload.role !== 'MAHASISWA') return NextResponse.redirect(new URL('/', request.url));
+      if (path.startsWith('/dosen') && payload.role !== 'DOSEN') return NextResponse.redirect(new URL('/', request.url));
+      if (path.startsWith('/admin') && payload.role !== 'ADMIN') return NextResponse.redirect(new URL('/', request.url));
+      if (path.startsWith('/kaprodi') && payload.role !== 'KAPRODI') return NextResponse.redirect(new URL('/', request.url));
+      if (path.startsWith('/mutu') && payload.role !== 'MUTU') return NextResponse.redirect(new URL('/', request.url));
+      if (path.startsWith('/penjaminan-mutu') && payload.role !== 'PENJAMINAN_MUTU') return NextResponse.redirect(new URL('/', request.url));
 
-      // Instant Revocation Check
-      const validateResponse = await fetch(new URL('/api/auth/validate', request.url), {
-        headers: { 'x-user-id': payload.id as string }
-      });
-
-      if (!validateResponse.ok) {
-        // Hapus cookie sesi agar pengguna benar-benar logout
-        const response = NextResponse.redirect(new URL('/', request.url));
-        response.cookies.delete('siakad_session');
-        return response;
-      }
-
-      // Clone request headers to append user info
+      // Lanjutkan request, dan pass user id ke header agar bisa dibaca di layout/page
       const requestHeaders = new Headers(request.headers);
-      requestHeaders.set('x-user-id', payload.id as string);
+      requestHeaders.set('x-user-id', payload.userId as string);
       requestHeaders.set('x-user-role', payload.role as string);
-      
+
       return NextResponse.next({
         request: {
           headers: requestHeaders,
         }
       });
-    } catch {
-      return NextResponse.redirect(new URL('/', request.url));
+    } catch (error) {
+      // Token expired atau tidak valid
+      const response = NextResponse.redirect(new URL('/', request.url));
+      response.cookies.delete('siakad_session');
+      return response;
     }
   }
 

@@ -84,9 +84,13 @@ export async function getMonitoringCpl(filters?: { angkatan?: string, semester?:
             include: {
               cpmk: {
                 include: {
-                  cplMappings: {
+                  ikMappings: {
                     include: {
-                      cpl: true
+                      ik: {
+                        include: {
+                          cpl: true
+                        }
+                      }
                     }
                   }
                 }
@@ -143,39 +147,50 @@ export async function getMonitoringCpl(filters?: { angkatan?: string, semester?:
       });
     });
 
-    // Petakan skor CPMK ke CPL
-    // Karena "a" dianggap sama semua, IK = Average(CPMK), CPL = Average(IK).
-    // Secara matematis jika bobot sama, skor CPL kelas ini adalah rata-rata skor CPMK yang terkait.
-    const classCplScores = new Map<string, { total: number, count: number }>();
-    
+    // Petakan skor CPMK ke IK, lalu IK ke CPL
+    // Karena kita menggunakan Weighted Sum, kita jumlahkan kontribusi per CPMK untuk IK di kelas ini
+    const ikScores = new Map<string, number>();
     en.kelas.mataKuliah.cpmk.forEach(cpmk => {
       const cpmkScore = cpmkScores.get(cpmk.id) || 0;
-      cpmk.cplMappings.forEach(mapping => {
-        const cplKode = mapping.cpl.kode;
-        if (!classCplScores.has(cplKode)) {
-          classCplScores.set(cplKode, { total: 0, count: 0 });
-        }
-        const data = classCplScores.get(cplKode)!;
-        data.total += cpmkScore;
-        data.count += 1;
+      cpmk.ikMappings.forEach(mapping => {
+        const ikId = mapping.ik.id;
+        const sum = ikScores.get(ikId) || 0;
+        ikScores.set(ikId, sum + (cpmkScore * (mapping.bobot / 100)));
       });
     });
 
-    // Tambahkan rata-rata CPL kelas ini ke skor agregat mahasiswa
-    for (const [cplKode, data] of classCplScores.entries()) {
+    // Petakan IK ke CPL (IK Score * IK Bobot)
+    const classCplScores = new Map<string, number>();
+    const iksProcessed = new Set<string>(); // avoid duplicate IK processing per class
+
+    en.kelas.mataKuliah.cpmk.forEach(cpmk => {
+      cpmk.ikMappings.forEach(mapping => {
+        const ik = mapping.ik;
+        if (!iksProcessed.has(ik.id)) {
+          iksProcessed.add(ik.id);
+          const ikScore = ikScores.get(ik.id) || 0;
+          if (ik.cpl) {
+            const cplKode = ik.cpl.kode;
+            const sum = classCplScores.get(cplKode) || 0;
+            classCplScores.set(cplKode, sum + (ikScore * (ik.bobot / 100)));
+          }
+        }
+      });
+    });
+
+    // Tambahkan agregat CPL kelas ini ke total mahasiswa
+    for (const [cplKode, score] of classCplScores.entries()) {
       if (!mhs.cplScores[cplKode]) {
-        mhs.cplScores[cplKode] = { total: 0, count: 0 };
+        mhs.cplScores[cplKode] = 0;
       }
-      const cplScoreForClass = data.total / data.count; // Average of mapped CPMKs
-      mhs.cplScores[cplKode].total += cplScoreForClass;
-      mhs.cplScores[cplKode].count += 1;
+      mhs.cplScores[cplKode] += score;
     }
   }
 
   const result = Array.from(studentMap.values()).map(mhs => {
     let finalScores: Record<string, number> = {};
-    for (const [cplKode, data] of Object.entries(mhs.cplScores) as any) {
-      finalScores[cplKode] = Math.round(data.total / data.count);
+    for (const [cplKode, score] of Object.entries(mhs.cplScores) as any) {
+      finalScores[cplKode] = Math.round(score as number);
     }
 
     // Helper untuk generate dummy score secara deterministik berdasarkan NIM + CPL (sehingga nilai tidak berubah-ubah setiap refresh)

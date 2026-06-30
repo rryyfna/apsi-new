@@ -10,24 +10,24 @@ type CPMK = {
   mataKuliah: { kodeMk: string; namaMk: string };
 };
 
-type CpmkIkMapping = {
-  cpmkId: string;
-  bobot: number;
-  cpmk?: CPMK;
-};
-
 type IK = {
   id: string;
   kode: string;
   deskripsi: string;
-  deskripsiEn: string | null;
   bobot: number;
-  cpmkMappings: CpmkIkMapping[];
 };
 
-export default function IkManager() {
-  const [iks, setIks] = useState<IK[]>([]);
-  const [allCpmk, setAllCpmk] = useState<CPMK[]>([]);
+type CPL = {
+  id: string;
+  kode: string;
+  deskripsi: string;
+  deskripsiEn: string | null;
+  ik: IK[];
+};
+
+export default function CplManager() {
+  const [cpls, setCpls] = useState<CPL[]>([]);
+  const [allIk, setAllIk] = useState<IK[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   
@@ -38,20 +38,19 @@ export default function IkManager() {
     kode: '',
     deskripsi: '',
     deskripsiEn: '',
-    bobot: 0,
-    cpmkMappings: [] as { cpmkId: string; bobot: number }[]
+    ikMappings: [] as { ikId: string; bobot: number }[]
   });
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [ikRes, cpmkRes] = await Promise.all([
-        fetch('/api/ik'),
-        fetch('/api/cpmk')
+      const [cplRes, ikRes] = await Promise.all([
+        fetch('/api/cpl'),
+        fetch('/api/ik')
       ]);
       
-      if (ikRes.ok) setIks(await ikRes.json());
-      if (cpmkRes.ok) setAllCpmk(await cpmkRes.json());
+      if (cplRes.ok) setCpls(await cplRes.json());
+      if (ikRes.ok) setAllIk(await ikRes.json());
     } catch (error) {
       console.error('Failed to fetch', error);
     }
@@ -62,15 +61,14 @@ export default function IkManager() {
     fetchData();
   }, []);
 
-  const openModal = (ik?: IK) => {
-    if (ik) {
-      setEditingId(ik.id);
+  const openModal = (cpl?: CPL) => {
+    if (cpl) {
+      setEditingId(cpl.id);
       setFormData({
-        kode: ik.kode,
-        deskripsi: ik.deskripsi,
-        deskripsiEn: ik.deskripsiEn || '',
-        bobot: ik.bobot || 0,
-        cpmkMappings: ik.cpmkMappings.map(m => ({ cpmkId: m.cpmkId, bobot: m.bobot }))
+        kode: cpl.kode,
+        deskripsi: cpl.deskripsi,
+        deskripsiEn: cpl.deskripsiEn || '',
+        ikMappings: cpl.ik.map(i => ({ ikId: i.id, bobot: i.bobot }))
       });
     } else {
       setEditingId(null);
@@ -78,8 +76,7 @@ export default function IkManager() {
         kode: '',
         deskripsi: '',
         deskripsiEn: '',
-        bobot: 0,
-        cpmkMappings: []
+        ikMappings: []
       });
     }
     setIsModalOpen(true);
@@ -93,30 +90,30 @@ export default function IkManager() {
   const handleAddMapping = () => {
     setFormData(prev => ({
       ...prev,
-      cpmkMappings: [...prev.cpmkMappings, { cpmkId: '', bobot: 0 }]
+      ikMappings: [...prev.ikMappings, { ikId: '', bobot: 0 }]
     }));
   };
 
   const handleRemoveMapping = (index: number) => {
     setFormData(prev => {
-      const newMappings = [...prev.cpmkMappings];
+      const newMappings = [...prev.ikMappings];
       newMappings.splice(index, 1);
-      return { ...prev, cpmkMappings: newMappings };
+      return { ...prev, ikMappings: newMappings };
     });
   };
 
   const handleMappingChange = (index: number, field: string, value: string | number) => {
     setFormData(prev => {
-      const newMappings = [...prev.cpmkMappings];
+      const newMappings = [...prev.ikMappings];
       newMappings[index] = { ...newMappings[index], [field]: value };
-      return { ...prev, cpmkMappings: newMappings };
+      return { ...prev, ikMappings: newMappings };
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingId ? `/api/ik/${editingId}` : '/api/ik';
+      const url = editingId ? `/api/cpl/${editingId}` : '/api/cpl';
       const method = editingId ? 'PUT' : 'POST';
       
       const res = await fetch(url, {
@@ -138,9 +135,9 @@ export default function IkManager() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus IK ini?')) {
+    if (confirm('Apakah Anda yakin ingin menghapus CPL ini?')) {
       try {
-        const res = await fetch(`/api/ik/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/cpl/${id}`, { method: 'DELETE' });
         if (res.ok) await fetchData();
       } catch (error) {
         console.error('Error deleting', error);
@@ -148,20 +145,20 @@ export default function IkManager() {
     }
   };
 
-  const filteredData = iks.filter(ik => 
-    ik.kode.toLowerCase().includes(search.toLowerCase()) ||
-    ik.deskripsi.toLowerCase().includes(search.toLowerCase())
+  const filteredData = cpls.filter(cpl => 
+    cpl.kode.toLowerCase().includes(search.toLowerCase()) ||
+    cpl.deskripsi.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h2 className="text-xl font-bold text-gray-800">Manajemen Indikator Kinerja (IK)</h2>
+        <h2 className="text-xl font-bold text-gray-800">Manajemen Capaian Pembelajaran Lulusan (CPL)</h2>
         <div className="flex gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
             <input 
               type="text" 
-              placeholder="Cari IK..." 
+              placeholder="Cari CPL..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -184,7 +181,7 @@ export default function IkManager() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">CPMK Terhubung</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">IK Terhubung</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
             </tr>
           </thead>
@@ -195,21 +192,21 @@ export default function IkManager() {
               </tr>
             ) : filteredData.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-10 text-center text-gray-500">Belum ada data IK.</td>
+                <td colSpan={4} className="px-6 py-10 text-center text-gray-500">Belum ada data CPL.</td>
               </tr>
             ) : (
-              filteredData.map((ik) => (
-                <tr key={ik.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{ik.kode}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{ik.deskripsi}</td>
-                  <td className="px-6 py-4 text-sm text-center font-bold text-blue-600">
-                    {ik.cpmkMappings?.length || 0} CPMK
+              filteredData.map((cpl) => (
+                <tr key={cpl.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{cpl.kode}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{cpl.deskripsi}</td>
+                  <td className="px-6 py-4 text-sm text-center font-bold text-green-600">
+                    {cpl.ik?.length || 0} IK
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button onClick={() => openModal(ik)} className="text-blue-600 hover:text-blue-900 mr-3" title="Edit">
+                    <button onClick={() => openModal(cpl)} className="text-blue-600 hover:text-blue-900 mr-3" title="Edit">
                       <Edit2 className="h-4 w-4" />
                     </button>
-                    <button onClick={() => handleDelete(ik.id)} className="text-red-600 hover:text-red-900" title="Hapus">
+                    <button onClick={() => handleDelete(cpl.id)} className="text-red-600 hover:text-red-900" title="Hapus">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </td>
@@ -225,7 +222,7 @@ export default function IkManager() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl my-8">
             <div className="flex justify-between items-center p-6 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">
-                {editingId ? 'Edit IK & Pemetaan CPMK' : 'Tambah Indikator Kinerja'}
+                {editingId ? 'Edit CPL & Pemetaan IK' : 'Tambah Capaian Pembelajaran Lulusan'}
               </h3>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
                 <X className="h-5 w-5" />
@@ -236,20 +233,20 @@ export default function IkManager() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Kode IK</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Kode CPL</label>
                     <input
                       type="text"
                       required
                       value={formData.kode}
                       onChange={e => setFormData({...formData, kode: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Contoh: IK-1"
+                      placeholder="Contoh: CPL-1"
                     />
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi IK</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi CPL</label>
                   <textarea
                     required
                     rows={3}
@@ -264,36 +261,36 @@ export default function IkManager() {
                 <div className="flex justify-between items-center mb-2">
                   <h4 className="text-md font-semibold text-gray-800 flex items-center gap-2">
                     <Link className="w-4 h-4" />
-                    Pemetaan CPMK ke IK
+                    Pemetaan IK ke CPL
                   </h4>
                   <button 
                     type="button" 
                     onClick={handleAddMapping}
                     className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg font-medium transition-colors"
                   >
-                    + Tambah CPMK
+                    + Tambah IK
                   </button>
                 </div>
 
                 <div className="space-y-3">
-                  {formData.cpmkMappings.length === 0 && (
+                  {formData.ikMappings.length === 0 && (
                     <div className="text-center py-6 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-gray-500 text-sm">
-                      Belum ada CPMK yang dipetakan ke IK ini.
+                      Belum ada IK yang dipetakan ke CPL ini.
                     </div>
                   )}
-                  {formData.cpmkMappings.map((mapping, index) => (
+                  {formData.ikMappings.map((mapping, index) => (
                     <div key={index} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
                       <div className="flex-1 w-full">
                         <select 
                           required
-                          value={mapping.cpmkId}
-                          onChange={(e) => handleMappingChange(index, 'cpmkId', e.target.value)}
+                          value={mapping.ikId}
+                          onChange={(e) => handleMappingChange(index, 'ikId', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                         >
-                          <option value="" disabled>Pilih CPMK...</option>
-                          {allCpmk.map(c => (
-                            <option key={c.id} value={c.id}>
-                              {c.kode} ({c.mataKuliah?.kodeMk}) - {c.deskripsi.substring(0, 50)}...
+                          <option value="" disabled>Pilih IK...</option>
+                          {allIk.map(i => (
+                            <option key={i.id} value={i.id}>
+                              {i.kode} - {i.deskripsi.substring(0, 50)}...
                             </option>
                           ))}
                         </select>
@@ -320,9 +317,9 @@ export default function IkManager() {
                       </button>
                     </div>
                   ))}
-                  {formData.cpmkMappings.length > 0 && (
+                  {formData.ikMappings.length > 0 && (
                     <div className="text-right text-xs font-semibold text-gray-500 mt-2">
-                      Total Bobot: {formData.cpmkMappings.reduce((sum, m) => sum + m.bobot, 0)}%
+                      Total Bobot: {formData.ikMappings.reduce((sum, m) => sum + m.bobot, 0)}%
                     </div>
                   )}
                 </div>
